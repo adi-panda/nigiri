@@ -1,4 +1,4 @@
-import { sortLayers, centerLayerPosition } from "./utils";
+import { sortLayers } from "./utils";
 import { animateLayer } from "./animate";
 
 type LayerObj = {
@@ -6,8 +6,9 @@ type LayerObj = {
   index: number;
   count: number;
   in: string;
-  out: string;
+  out: string[];
   prev: string;
+  darken: boolean;
 };
 
 export const animatePhotoshop = (layerArray: LayerObj[]) => {
@@ -18,8 +19,9 @@ export const animatePhotoshop = (layerArray: LayerObj[]) => {
   if (layerArray.length == 0) layerArray = getPanels();
   let layers = sortLayers(comp, layerArray, newFolder);
   let currentCount = 1;
+  let darkenIndex = -1;
   for (let i = 0; i < layers.length; i++) {
-    for (let k = 0; k < layerArray[i].count; k++) {
+    for (let k = 0; k < layers[i].count; k++) {
       let newComp = app.project.items.addComp(
         comp.name + "_" + currentCount,
         1080,
@@ -34,7 +36,16 @@ export const animatePhotoshop = (layerArray: LayerObj[]) => {
         let currentLayer = layers[j].layer;
         if (!(currentLayer instanceof AVLayer)) continue;
         let newLayer = newComp.layers.add(currentLayer.source);
-        if (i != 0 && k == 0) animateLayer(newLayer, i, j, layerArray);
+        let newLayerScale = newLayer.property("Scale");
+        if (!(newLayerScale instanceof Property)) continue;
+        newLayerScale.setValue([
+          layers[j].scaleFactor * 100,
+          layers[j].scaleFactor * 100,
+        ]);
+        if (layerArray[i].darken) darkenIndex = i;
+        if (i != 0 && k == 0)
+          animateLayer(newLayer, i, j, layers, newComp, darkenIndex);
+        layers[j].layer = newLayer;
       }
       currentCount++;
     }
@@ -48,13 +59,19 @@ export const getPanels = (): LayerObj[] => {
   if (!(comp instanceof CompItem)) return [];
   let layers = [];
   for (let i = 1; i <= comp.numLayers; i++) {
+    let out = [];
+    for (let j = comp.numLayers; j > i; j--) {
+      out.push("up");
+    }
     let layerObj = {
       name: comp.layer(i).name,
       index: i,
       count: 1,
+      scaleFactor: 1,
       in: "down",
-      out: "up",
-      prev: "flush",
+      out: out,
+      prev: "keep",
+      darken: false,
     };
     layers.push(layerObj);
   }
@@ -108,7 +125,6 @@ export const updateValues = () => {
               ];
             }
             currLayerPos.setValueAtTime(0, actualPosition);
-            currLayerPos.setValueAtTime(2, actualPosition);
             currLayerScale.setValueAtTime(
               0,
               oldLayerScale.valueAtTime(15, false)
@@ -120,6 +136,7 @@ export const updateValues = () => {
           }
         }
       }
+      return;
     }
     if (parentFolder.item(i) == comp) {
       pastCurrentComp = true;

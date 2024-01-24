@@ -12,3 +12,13 @@ declare global {
     __adobe_cep__: __adobe_cep__;
   }
 }
+
+export type LayerObj = {
+  index: number;
+  name: string;
+  in: string;
+  out: string[];
+  prev: string;
+  count: number;
+  darken: boolean;
+};

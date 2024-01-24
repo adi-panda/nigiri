@@ -1,3 +1,6 @@
+import { LayerObj, getScaleFactor } from "./utils";
+import { downIn, leftIn, rightOut, upOut } from "./subAnimations";
+
 const layerEaseValues = [
   new KeyframeEase(0, 83.5),
   new KeyframeEase(0, 0.1),
@@ -9,34 +12,38 @@ export const animateLayer = (
   currLayer: AVLayer,
   slide: number, // current slide, e.g 7_1, 7_2, 7_3
   index: number, // current layer index, e.g 0, 1, 2
-  layerArray: any[]
+  layerArray: LayerObj[],
+  newComp: CompItem,
+  darkenIndex: number
 ) => {
   if (slide === index) {
     animateLayerIn(currLayer, layerArray, index, slide);
-  } else if (slide == index + 1) {
-    animateLayerOut(currLayer, layerArray, index, slide);
+    if (darkenIndex != -1 && darkenIndex <= slide) {
+      let darkBG = newComp.layers.addSolid([0, 0, 0], "Darken", 1080, 1920, 55);
+      let darkBGOpacity = darkBG.property("Opacity");
+      if (!(darkBGOpacity instanceof Property)) return;
+      if (darkenIndex === slide) {
+        darkBGOpacity.setValueAtTime(0, 0);
+        darkBGOpacity.setValueAtTime(1.5, 55);
+      }
+      darkBG.moveAfter(newComp.layer(slide - darkenIndex + 2));
+    }
   } else {
-    let layerPos = currLayer.property("Position");
-    if (!(layerPos instanceof Property)) return;
-    layerPos.setValue([
-      540,
-      (currLayer.height * (currLayer.scale.value[1] / 100)) / 2,
-    ]);
+    animateLayerOut(currLayer, layerArray, index, slide);
   }
 };
 
 const animateLayerIn = (
   currLayer: AVLayer,
-  layerArray: any[],
+  layerArray: LayerObj[],
   index: number,
   slide: number
 ) => {
   let layerPos = currLayer.property("Position");
   let layerOpacity = currLayer.property("Opacity");
   let layerScale = currLayer.property("Scale");
-  let prevLayer = layerArray[index - 1].layer;
+  let prevLayer = layerArray[index - 1];
 
-  if (!(prevLayer instanceof AVLayer)) return;
   if (!(layerPos instanceof Property)) return;
   if (!(layerOpacity instanceof Property)) return;
   if (!(layerScale instanceof Property)) return;
@@ -46,14 +53,11 @@ const animateLayerIn = (
     currLayer.scale.value[0],
   ]);
 
-  alert(
-    (prevLayer.height * (prevLayer.scale.value[1] / 100)) / 2 + " prev " + index
-  );
-  layerPos.setValueAtTime(0, [540, 1920]);
-  layerPos.setValueAtTime(2, [
-    540,
-    (prevLayer.height * (prevLayer.scale.value[1] / 100)) / 2,
-  ]);
+  if (layerArray[slide].in === "down") {
+    downIn(layerArray, slide, currLayer, layerPos, prevLayer);
+  } else if (layerArray[slide].in === "left") {
+    leftIn(layerArray, slide, currLayer, layerPos, prevLayer);
+  }
 
   // currLayer.height * (currLayer.scale.value[1] / 100);
 
@@ -67,7 +71,7 @@ const animateLayerIn = (
 
 const animateLayerOut = (
   currLayer: AVLayer,
-  layerArray: any[],
+  layerArray: LayerObj[],
   index: number,
   slide: number
 ) => {
@@ -79,18 +83,17 @@ const animateLayerOut = (
   if (!(layerOpacity instanceof Property)) return;
   if (!(layerScale instanceof Property)) return;
 
-  alert(
-    (currLayer.height * (currLayer.scale.value[1] / 100)) / 2 + " curr " + index
-  );
-  layerPos.setValueAtTime(0, [540, 960]);
-  layerPos.setValueAtTime(2, [
-    540,
-    (currLayer.height * (currLayer.scale.value[1] / 100)) / 2,
-  ]);
-  // layerPos.setValueAtTime(2, [
-  //   540,
-  //   (currLayer.height * (currLayer.scale.value[1] / 100)) / 2,
-  // ]);
+  let prevPos = layerArray[index].layer.position.valueAtTime(2, false);
+  layerPos.setValueAtTime(0, prevPos);
+  if (layerArray[slide].darken) return;
+
+  if (layerArray[index].out[slide - 1 - index] === "up") {
+    upOut(layerArray, slide, currLayer, layerPos, prevPos, layerOpacity);
+  } else if (layerArray[index].out[slide - 1 - index] === "right") {
+    alert("right out");
+    rightOut(layerArray, slide, currLayer, layerPos, prevPos, layerOpacity);
+  }
+
   // Set the ease to be a smooth bezier.
   layerPos.setTemporalEaseAtKey(1, [layerEaseValues[0]], [layerEaseValues[1]]);
   layerPos.setTemporalEaseAtKey(2, [layerEaseValues[2]], [layerEaseValues[3]]);

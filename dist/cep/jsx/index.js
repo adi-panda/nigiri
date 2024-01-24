@@ -58,15 +58,17 @@ var sortLayers = function sortLayers(comp, layerArray, parentFold) {
     var currLayer = comp.layer(i);
     if (!(currLayer instanceof AVLayer)) continue;
     var newLayer = newComp.layers.add(currLayer.source);
-    centerLayerPosition(newLayer, newComp);
+    var scaleFactor = getScaleFactor(newLayer, newComp);
     var layerObj = {
       name: comp.layer(i).name,
       index: i,
-      layer: comp.layer(i),
+      layer: newLayer,
       count: layerArray[i - 1].count,
       "in": layerArray[i - 1]["in"],
       out: layerArray[i - 1].out,
-      prev: layerArray[i - 1].prev
+      scaleFactor: scaleFactor,
+      prev: layerArray[i - 1].prev,
+      darken: layerArray[i - 1].darken
     };
     layers.push(layerObj);
   }
@@ -81,49 +83,105 @@ var sortLayers = function sortLayers(comp, layerArray, parentFold) {
   });
   return layers;
 };
-var centerLayerPosition = function centerLayerPosition(currLayer, comp) {
-  var layerPos = currLayer.property("Position");
+var getScaleFactor = function getScaleFactor(currLayer, comp) {
   var layerScale = currLayer.property("Scale");
-  if (!(layerPos instanceof Property)) return;
-  if (!(layerScale instanceof Property)) return;
-  layerPos.setValue([540, 960]);
+  if (!(layerScale instanceof Property)) return 1;
   var scaleFactorY = 100;
   var scaleFactorX = 100;
   if (currLayer.height > comp.height) {
-    scaleFactorY = comp.height / currLayer.height * 100;
+    scaleFactorY = comp.height / currLayer.height;
   }
   if (currLayer.width > comp.width) {
-    scaleFactorX = comp.width / currLayer.width * 100;
+    scaleFactorX = comp.width / currLayer.width;
   }
-  var scaleFactor = Math.min(scaleFactorX, scaleFactorY);
-  layerScale.setValue([scaleFactor, scaleFactor]);
+  var scaleFactor = Math.min(scaleFactorX, scaleFactorY, 1);
+  return scaleFactor;
+};
+
+var upOut = function upOut(layerArray, slide, currLayer, layerPos, prevPos, layerOpacity) {
+  if (layerArray[slide].prev === "keep") {
+    if (slide === 1) {
+      var topAligned = currLayer.height * (currLayer.scale.value[1] / 100) / 2;
+      layerPos.setValueAtTime(2, [540, topAligned]);
+    } else {
+      var newLayerHeight = layerArray[slide].layer.height * layerArray[slide].scaleFactor;
+      var calcVal = prevPos[1] - (newLayerHeight - (1920 - layerArray[slide - 1].layer.position.valueAtTime(2, false)[1] - layerArray[slide - 1].layer.height * layerArray[slide - 1].scaleFactor / 2));
+      layerPos.setValueAtTime(2, [540, calcVal]);
+    }
+  } else {
+    layerPos.setValueAtTime(2, [540, -1 * layerArray[slide].layer.height / 2]);
+    layerOpacity.setValueAtTime(0, 100);
+    layerOpacity.setValueAtTime(2, 0);
+  }
+};
+var downIn = function downIn(layerArray, slide, currLayer, layerPos, prevLayer) {
+  layerPos.setValueAtTime(0, [540, 1920]);
+  if (layerArray[slide].prev === "keep") {
+    if (slide === 1) {
+      layerPos.setValueAtTime(2, [540, prevLayer.layer.height * prevLayer.scaleFactor + currLayer.height * (currLayer.scale.value[1] / 100) / 2]);
+    } else {
+      var calcVal = 1920 - currLayer.height * (currLayer.scale.value[1] / 100) / 2;
+      layerPos.setValueAtTime(2, [540, calcVal]);
+    }
+  } else {
+    layerPos.setValueAtTime(2, [540, 960]);
+  }
+};
+var leftIn = function leftIn(layerArray, slide, currLayer, layerPos, prevLayer) {
+  if (layerArray[slide].prev === "keep") {
+    var verticalHeight = 1920 - currLayer.height * (currLayer.scale.value[1] / 100) / 2;
+    layerPos.setValueAtTime(0, [-540, verticalHeight]);
+    var calcVal = 0 + currLayer.width * (currLayer.scale.value[0] / 100) / 2;
+    layerPos.setValueAtTime(2, [calcVal, verticalHeight]);
+  } else {
+    layerPos.setValueAtTime(0, [-540, 960]);
+    layerPos.setValueAtTime(2, [540, 960]);
+  }
+};
+var rightOut = function rightOut(layerArray, slide, currLayer, layerPos, prevPos, layerOpacity) {
+  if (layerArray[slide].prev === "keep") {
+    var newLayerWidth = layerArray[slide].layer.width * layerArray[slide].scaleFactor;
+    var calcVal = prevPos[0] + (newLayerWidth - (1080 - layerArray[slide - 1].layer.position.valueAtTime(2, false)[0] - layerArray[slide - 1].layer.width * layerArray[slide - 1].scaleFactor / 2));
+    layerPos.setValueAtTime(2, [calcVal, 960]);
+  } else {
+    layerPos.setValueAtTime(2, [1080 + layerArray[slide].layer.width * layerArray[slide].scaleFactor / 2, 960]);
+    layerOpacity.setValueAtTime(0, 100);
+    layerOpacity.setValueAtTime(2, 0);
+  }
 };
 
 var layerEaseValues = [new KeyframeEase(0, 83.5), new KeyframeEase(0, 0.1), new KeyframeEase(11.5, 83.5), new KeyframeEase(0, 0.1)];
-var animateLayer = function animateLayer(currLayer, slide, index, layerArray) {
+var animateLayer = function animateLayer(currLayer, slide, index, layerArray, newComp, darkenIndex) {
   if (slide === index) {
-    animateLayerIn(currLayer, layerArray, index);
-  } else if (slide == index + 1) {
-    animateLayerOut(currLayer, layerArray, index);
+    animateLayerIn(currLayer, layerArray, index, slide);
+    if (darkenIndex != -1 && darkenIndex <= slide) {
+      var darkBG = newComp.layers.addSolid([0, 0, 0], "Darken", 1080, 1920, 55);
+      var darkBGOpacity = darkBG.property("Opacity");
+      if (!(darkBGOpacity instanceof Property)) return;
+      if (darkenIndex === slide) {
+        darkBGOpacity.setValueAtTime(0, 0);
+        darkBGOpacity.setValueAtTime(1.5, 55);
+      }
+      darkBG.moveAfter(newComp.layer(slide - darkenIndex + 2));
+    }
   } else {
-    var layerPos = currLayer.property("Position");
-    if (!(layerPos instanceof Property)) return;
-    layerPos.setValue([540, currLayer.height * (currLayer.scale.value[1] / 100) / 2]);
+    animateLayerOut(currLayer, layerArray, index, slide);
   }
 };
 var animateLayerIn = function animateLayerIn(currLayer, layerArray, index, slide) {
   var layerPos = currLayer.property("Position");
   var layerOpacity = currLayer.property("Opacity");
   var layerScale = currLayer.property("Scale");
-  var prevLayer = layerArray[index - 1].layer;
-  if (!(prevLayer instanceof AVLayer)) return;
+  var prevLayer = layerArray[index - 1];
   if (!(layerPos instanceof Property)) return;
   if (!(layerOpacity instanceof Property)) return;
   if (!(layerScale instanceof Property)) return;
   layerScale.setValueAtTime(2, [currLayer.scale.value[0], currLayer.scale.value[0]]);
-  alert(prevLayer.height * (prevLayer.scale.value[1] / 100) / 2 + " prev " + index);
-  layerPos.setValueAtTime(0, [540, 1920]);
-  layerPos.setValueAtTime(2, [540, prevLayer.height * (prevLayer.scale.value[1] / 100) / 2]);
+  if (layerArray[slide]["in"] === "down") {
+    downIn(layerArray, slide, currLayer, layerPos, prevLayer);
+  } else if (layerArray[slide]["in"] === "left") {
+    leftIn(layerArray, slide, currLayer, layerPos);
+  }
 
   // currLayer.height * (currLayer.scale.value[1] / 100);
 
@@ -140,13 +198,16 @@ var animateLayerOut = function animateLayerOut(currLayer, layerArray, index, sli
   if (!(layerPos instanceof Property)) return;
   if (!(layerOpacity instanceof Property)) return;
   if (!(layerScale instanceof Property)) return;
-  alert(currLayer.height * (currLayer.scale.value[1] / 100) / 2 + " curr " + index);
-  layerPos.setValueAtTime(0, [540, 960]);
-  layerPos.setValueAtTime(2, [540, currLayer.height * (currLayer.scale.value[1] / 100) / 2]);
-  // layerPos.setValueAtTime(2, [
-  //   540,
-  //   (currLayer.height * (currLayer.scale.value[1] / 100)) / 2,
-  // ]);
+  var prevPos = layerArray[index].layer.position.valueAtTime(2, false);
+  layerPos.setValueAtTime(0, prevPos);
+  if (layerArray[slide].darken) return;
+  if (layerArray[index].out[slide - 1 - index] === "up") {
+    upOut(layerArray, slide, currLayer, layerPos, prevPos, layerOpacity);
+  } else if (layerArray[index].out[slide - 1 - index] === "right") {
+    alert("right out");
+    rightOut(layerArray, slide, currLayer, layerPos, prevPos, layerOpacity);
+  }
+
   // Set the ease to be a smooth bezier.
   layerPos.setTemporalEaseAtKey(1, [layerEaseValues[0]], [layerEaseValues[1]]);
   layerPos.setTemporalEaseAtKey(2, [layerEaseValues[2]], [layerEaseValues[3]]);
@@ -160,8 +221,9 @@ var animatePhotoshop = function animatePhotoshop(layerArray) {
   if (layerArray.length == 0) layerArray = getPanels();
   var layers = sortLayers(comp, layerArray, newFolder);
   var currentCount = 1;
+  var darkenIndex = -1;
   for (var i = 0; i < layers.length; i++) {
-    for (var k = 0; k < layerArray[i].count; k++) {
+    for (var k = 0; k < layers[i].count; k++) {
       var newComp = app.project.items.addComp(comp.name + "_" + currentCount, 1080, 1920, 1, 15, 24);
       newComp.parentFolder = newFolder;
       newComp.layers.addSolid([255, 255, 255], "Background", 1080, 1920, 1);
@@ -169,7 +231,12 @@ var animatePhotoshop = function animatePhotoshop(layerArray) {
         var currentLayer = layers[j].layer;
         if (!(currentLayer instanceof AVLayer)) continue;
         var newLayer = newComp.layers.add(currentLayer.source);
-        if (i != 0 && k == 0) animateLayer(newLayer, i, j, layerArray);
+        var newLayerScale = newLayer.property("Scale");
+        if (!(newLayerScale instanceof Property)) continue;
+        newLayerScale.setValue([layers[j].scaleFactor * 100, layers[j].scaleFactor * 100]);
+        if (layerArray[i].darken) darkenIndex = i;
+        if (i != 0 && k == 0) animateLayer(newLayer, i, j, layers, newComp, darkenIndex);
+        layers[j].layer = newLayer;
       }
       currentCount++;
     }
@@ -182,13 +249,19 @@ var getPanels = function getPanels() {
   if (!(comp instanceof CompItem)) return [];
   var layers = [];
   for (var i = 1; i <= comp.numLayers; i++) {
+    var out = [];
+    for (var j = comp.numLayers; j > i; j--) {
+      out.push("up");
+    }
     var layerObj = {
       name: comp.layer(i).name,
       index: i,
       count: 1,
+      scaleFactor: 1,
       "in": "down",
-      out: "up",
-      prev: "flush"
+      out: out,
+      prev: "keep",
+      darken: false
     };
     layers.push(layerObj);
   }
@@ -237,12 +310,12 @@ var updateValues = function updateValues() {
               actualPosition = [childPosition[0] + parentPosition[0], childPosition[1] + parentPosition[1]];
             }
             currLayerPos.setValueAtTime(0, actualPosition);
-            currLayerPos.setValueAtTime(2, actualPosition);
             currLayerScale.setValueAtTime(0, oldLayerScale.valueAtTime(15, false));
             currLayerOpacity.setValueAtTime(0, oldLayerOpacity.valueAtTime(15, false));
           }
         }
       }
+      return;
     }
     if (parentFolder.item(_i) == comp) {
       pastCurrentComp = true;

@@ -1,8 +1,20 @@
+export type LayerObj = {
+  name: string;
+  index: number;
+  layer: AVLayer;
+  count: number;
+  scaleFactor: number;
+  in: string;
+  out: string;
+  prev: string;
+  darken: boolean;
+};
+
 export const sortLayers = (
   comp: CompItem,
   layerArray: any[],
   parentFold: FolderItem
-) => {
+): LayerObj[] => {
   let layers = [];
   let newComp = app.project.items.addComp("internal", 1080, 1920, 1, 15, 24);
   newComp.parentFolder = parentFold;
@@ -10,15 +22,17 @@ export const sortLayers = (
     let currLayer = comp.layer(i);
     if (!(currLayer instanceof AVLayer)) continue;
     let newLayer = newComp.layers.add(currLayer.source);
-    centerLayerPosition(newLayer, newComp);
+    let scaleFactor = getScaleFactor(newLayer, newComp);
     let layerObj = {
       name: comp.layer(i).name,
       index: i,
-      layer: comp.layer(i),
+      layer: newLayer,
       count: layerArray[i - 1].count,
       in: layerArray[i - 1].in,
       out: layerArray[i - 1].out,
+      scaleFactor: scaleFactor,
       prev: layerArray[i - 1].prev,
+      darken: layerArray[i - 1].darken,
     };
     layers.push(layerObj);
   }
@@ -34,22 +48,19 @@ export const sortLayers = (
   return layers;
 };
 
-export const centerLayerPosition = (currLayer: AVLayer, comp: CompItem) => {
-  let layerPos = currLayer.property("Position");
+export const getScaleFactor = (currLayer: AVLayer, comp: CompItem) => {
   let layerScale = currLayer.property("Scale");
-  if (!(layerPos instanceof Property)) return;
-  if (!(layerScale instanceof Property)) return;
-  layerPos.setValue([540, 960]);
+  if (!(layerScale instanceof Property)) return 1;
   let scaleFactorY = 100;
   let scaleFactorX = 100;
   if (currLayer.height > comp.height) {
-    scaleFactorY = (comp.height / currLayer.height) * 100;
+    scaleFactorY = comp.height / currLayer.height;
   }
   if (currLayer.width > comp.width) {
-    scaleFactorX = (comp.width / currLayer.width) * 100;
+    scaleFactorX = comp.width / currLayer.width;
   }
-  let scaleFactor = Math.min(scaleFactorX, scaleFactorY);
-  layerScale.setValue([scaleFactor, scaleFactor]);
+  let scaleFactor = Math.min(scaleFactorX, scaleFactorY, 1);
+  return scaleFactor;
 };
 
 // ALERT EASE VALUES
