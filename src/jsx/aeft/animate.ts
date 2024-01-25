@@ -1,12 +1,6 @@
 import { LayerObj, getScaleFactor } from "./utils";
 import { downIn, leftIn, rightOut, upOut } from "./subAnimations";
-
-const layerEaseValues = [
-  new KeyframeEase(0, 83.5),
-  new KeyframeEase(0, 0.1),
-  new KeyframeEase(11.5, 83.5),
-  new KeyframeEase(0, 0.1),
-];
+import { fastSlowEase } from "./easeValues";
 
 export const animateLayer = (
   currLayer: AVLayer,
@@ -62,8 +56,8 @@ const animateLayerIn = (
   // currLayer.height * (currLayer.scale.value[1] / 100);
 
   // Set the ease to be a smooth bezier.
-  layerPos.setTemporalEaseAtKey(1, [layerEaseValues[0]], [layerEaseValues[1]]);
-  layerPos.setTemporalEaseAtKey(2, [layerEaseValues[2]], [layerEaseValues[3]]);
+  layerPos.setTemporalEaseAtKey(1, [fastSlowEase[0]], [fastSlowEase[1]]);
+  layerPos.setTemporalEaseAtKey(2, [fastSlowEase[2]], [fastSlowEase[3]]);
 
   layerOpacity.setValueAtTime(0, 0);
   layerOpacity.setValueAtTime(1, 100);
@@ -90,11 +84,10 @@ const animateLayerOut = (
   if (layerArray[index].out[slide - 1 - index] === "up") {
     upOut(layerArray, slide, currLayer, layerPos, prevPos, layerOpacity);
   } else if (layerArray[index].out[slide - 1 - index] === "right") {
-    alert("right out");
     rightOut(layerArray, slide, currLayer, layerPos, prevPos, layerOpacity);
   }
 
   // Set the ease to be a smooth bezier.
-  layerPos.setTemporalEaseAtKey(1, [layerEaseValues[0]], [layerEaseValues[1]]);
-  layerPos.setTemporalEaseAtKey(2, [layerEaseValues[2]], [layerEaseValues[3]]);
+  layerPos.setTemporalEaseAtKey(1, [fastSlowEase[0]], [fastSlowEase[1]]);
+  layerPos.setTemporalEaseAtKey(2, [fastSlowEase[2]], [fastSlowEase[3]]);
 };

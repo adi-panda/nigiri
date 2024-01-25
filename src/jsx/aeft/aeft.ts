@@ -1,5 +1,7 @@
 import { sortLayers } from "./utils";
 import { animateLayer } from "./animate";
+import { slowFastSlow } from "./easeValues";
+import { forEachLayer } from "./aeft-utils";
 
 type LayerObj = {
   name: string;
@@ -52,6 +54,71 @@ export const animatePhotoshop = (layerArray: LayerObj[]) => {
   }
   app.endUndoGroup();
   return;
+};
+
+export const render = () => {
+  for (let i = 1; i <= app.project.numItems; i++) {
+    let currentFolder = app.project.item(i);
+    if (!(currentFolder instanceof FolderItem)) continue;
+    if (currentFolder.name.indexOf("Page_") < 0) continue;
+    for (let j = 1; j <= currentFolder.numItems; j++) {
+      let currentComp = currentFolder.item(j);
+      if (!(currentComp instanceof CompItem)) continue;
+      if (currentComp.name === "internal") continue;
+      let greatest = 0;
+      forEachLayer(currentComp, (layer) => {
+        let layerOpacity = layer.property("Opacity");
+        if (!(layerOpacity instanceof Property)) return;
+        let layerPos = layer.property("Position");
+        if (!(layerPos instanceof Property)) return;
+        let layerScale = layer.property("Scale");
+        if (!(layerScale instanceof Property)) return;
+        let greateastTime = 0;
+        for (let k = 1; k <= layerOpacity.numKeys; k++) {
+          if (layerOpacity.keyTime(k) > greateastTime)
+            greateastTime = layerOpacity.keyTime(k);
+        }
+        for (let k = 1; k <= layerPos.numKeys; k++) {
+          if (layerPos.keyTime(k) > greateastTime)
+            greateastTime = layerPos.keyTime(k);
+        }
+        for (let k = 1; k <= layerScale.numKeys; k++) {
+          if (layerScale.keyTime(k) > greateastTime)
+            greateastTime = layerScale.keyTime(k);
+        }
+        greatest = Math.max(greatest, greateastTime);
+      });
+      if (greatest > 0) currentComp.workAreaDuration = greatest;
+      else currentComp.workAreaDuration = 1;
+      app.project.renderQueue.items.add(currentComp);
+    }
+  }
+};
+
+export const panLayer = () => {
+  app.beginUndoGroup("Pan Layer");
+  let comp = app.project.activeItem;
+  if (!(comp instanceof CompItem)) return;
+  let curr = comp.selectedLayers[0];
+  if (!(curr instanceof AVLayer)) return;
+  let newNull = comp.layers.addNull();
+  let newNullPos = newNull.property("Position");
+  let currPos = curr.property("Position");
+  if (!(currPos instanceof Property)) return;
+  if (!(newNullPos instanceof Property)) return;
+  let oldPos = currPos.valueAtTime(0, true);
+  curr.parent = newNull;
+  newNullPos.setValueAtTime(0, [
+    1080 - (curr.width * (curr.scale.value[0] / 100)) / 2,
+    newNull.position.value[1],
+  ]);
+  newNullPos.setValueAtTime(6, [
+    (curr.width * (curr.scale.value[0] / 100)) / 2,
+    newNull.position.value[1],
+  ]);
+  newNullPos.setTemporalEaseAtKey(1, [slowFastSlow[0]], [slowFastSlow[1]]);
+  newNullPos.setTemporalEaseAtKey(2, [slowFastSlow[2]], [slowFastSlow[3]]);
+  app.endUndoGroup();
 };
 
 export const getPanels = (): LayerObj[] => {

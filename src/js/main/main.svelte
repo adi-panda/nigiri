@@ -22,6 +22,12 @@
     console.log(layers);
     evalTS("animatePhotoshop", layers);
   };
+  const panLayer = () => {
+    evalTS("panLayer");
+  };
+  const renderComps = () => {
+    evalTS("render");
+  };
   if (window.cep) {
     subscribeBackgroundColor((color) => {
       backgroundColor = color;
@@ -32,6 +38,7 @@
 <div style={`background-color: ${backgroundColor}`} class="app">
   <div class="flex-row">
     <button class="button" on:click={animateLayers}>Animate!</button>
+    <button class="button" on:click={panLayer}>Pan!</button>
     <button
       class="button"
       on:click={() => {
@@ -39,6 +46,7 @@
       }}>Update Values!</button
     >
     <button on:click={getLayers}>Load!</button>
+    <button class="button" on:click={renderComps}>Render!</button>
   </div>
   <div class="panel-item-title">
     <span>Layer</span>
@@ -60,7 +68,7 @@
         <!-- Out -->
         <button
           on:click={() => {
-            outDialog = true;
+            outDialog = !outDialog;
             outDialogIndex = layer.index - 1;
           }}
           class="out-button"

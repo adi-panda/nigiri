@@ -12,7 +12,7 @@ export const upOut = (
     if (slide === 1) {
       let topAligned =
         (currLayer.height * (currLayer.scale.value[1] / 100)) / 2;
-      layerPos.setValueAtTime(2, [540, topAligned]);
+      layerPos.setValueAtTime(2, [prevPos[0], topAligned]);
     } else {
       let newLayerHeight =
         layerArray[slide].layer.height * layerArray[slide].scaleFactor;
@@ -25,11 +25,11 @@ export const upOut = (
               layerArray[slide - 1].scaleFactor) /
               2));
 
-      layerPos.setValueAtTime(2, [540, calcVal]);
+      layerPos.setValueAtTime(2, [prevPos[0], calcVal]);
     }
   } else {
     layerPos.setValueAtTime(2, [
-      540,
+      prevPos[0],
       (-1 * layerArray[slide].layer.height) / 2,
     ]);
     layerOpacity.setValueAtTime(0, 100);
@@ -101,7 +101,7 @@ export const rightOut = (
             layerArray[slide - 1].scaleFactor) /
             2));
 
-    layerPos.setValueAtTime(2, [calcVal, 960]);
+    layerPos.setValueAtTime(2, [calcVal, prevPos[1]]);
   } else {
     layerPos.setValueAtTime(2, [
       1080 +
