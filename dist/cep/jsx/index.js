@@ -5,7 +5,7 @@ var config = {
   id: "com.toona.nigiri",
   displayName: "Nigiri",
   symlink: "local",
-  port: 3000,
+  port: 3005,
   servePort: 5000,
   startingDebugPort: 8860,
   extensionManifestVersion: 6.0,
