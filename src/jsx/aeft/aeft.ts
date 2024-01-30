@@ -1,4 +1,4 @@
-import { sortLayers } from "./utils";
+import { getAnimDirection, getLayerProps, sortLayers } from "./utils";
 import { animateLayer } from "./animate";
 import { slowFastSlow } from "./easeValues";
 import { forEachLayer } from "./aeft-utils";
@@ -168,46 +168,35 @@ export const updateValues = () => {
       for (let j = 1; j <= currentComp.numLayers; j++) {
         let currentLayer = currentComp.layer(j);
         for (let k = 0; k < layers.length; k++) {
-          if (layers[k].name == currentLayer.name) {
-            let currLayerPos = currentLayer.property("Position");
-            let oldLayerPos = layers[k].layer.property("Position");
-            let currLayerScale = currentLayer.property("Scale");
-            let oldLayerScale = layers[k].layer.property("Scale");
-            let currLayerOpacity = currentLayer.property("Opacity");
-            let oldLayerOpacity = layers[k].layer.property("Opacity");
-            if (!(currLayerOpacity instanceof Property)) continue;
-            if (!(oldLayerOpacity instanceof Property)) continue;
-            if (!(currLayerPos instanceof Property)) continue;
-            if (!(oldLayerPos instanceof Property)) continue;
-            if (!(currLayerScale instanceof Property)) continue;
-            if (!(oldLayerScale instanceof Property)) continue;
-            let parentLayer = layers[k].layer.parent;
-            let actualPosition = oldLayerPos.valueAtTime(15, true);
-            if (parentLayer) {
-              var childPosition = layers[k].layer.transform.position.value;
-              var parentPosition = parentLayer.transform.position.value;
-              actualPosition = [
-                childPosition[0] + parentPosition[0],
-                childPosition[1] + parentPosition[1],
-              ];
-            }
-            currLayerPos.setValueAtTime(0, actualPosition);
-            currLayerScale.setValueAtTime(
-              0,
-              oldLayerScale.valueAtTime(15, false)
-            );
-            currLayerOpacity.setValueAtTime(
-              0,
-              oldLayerOpacity.valueAtTime(15, false)
-            );
+          if (layers[k].name !== currentLayer.name) continue;
+          const [currOpacity, currPos, currScale] = getLayerProps(currentLayer);
+          const [oldOpacity, oldPos, oldScale] = getLayerProps(layers[k].layer);
+          let parentLayer = layers[k].layer.parent;
+          let actualPosition = oldPos.valueAtTime(15, true);
+          if (parentLayer) {
+            var childPosition = layers[k].layer.transform.position.value;
+            var parentPosition = parentLayer.transform.position.value;
+            actualPosition = [
+              childPosition[0] + parentPosition[0],
+              childPosition[1] + parentPosition[1],
+            ];
+          }
+          const direction = getAnimDirection(currentLayer);
+          if (direction == "none") continue;
+          let currPosPrev = currPos.valueAtTime(2, true);
+          currPos.setValueAtTime(0, actualPosition);
+          currScale.setValueAtTime(0, oldScale.valueAtTime(15, false));
+          currOpacity.setValueAtTime(0, oldOpacity.valueAtTime(15, false));
+          if (direction === "left")
+            currPos.setValueAtTime(2, [currPosPrev[0], actualPosition[1]]);
+          if (direction === "down") {
+            currPos.setValueAtTime(2, [actualPosition[0], currPosPrev[1]]);
           }
         }
       }
       return;
     }
-    if (parentFolder.item(i) == comp) {
-      pastCurrentComp = true;
-    }
+    if (parentFolder.item(i) == comp) pastCurrentComp = true;
   }
   app.endUndoGroup();
 };

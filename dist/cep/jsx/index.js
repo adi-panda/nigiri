@@ -1,4 +1,4 @@
-(function (thisObj) {// ----- EXTENDSCRIPT INCLUDES ------ //"object"!=typeof JSON&&(JSON={}),function(){"use strict";var rx_one=/^[\],:{}\s]*$/,rx_two=/\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g,rx_three=/"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g,rx_four=/(?:^|:|,)(?:\s*\[)+/g,rx_escapable=/[\\\"\u0000-\u001f\u007f-\u009f\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g,rx_dangerous=/[\u0000\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g,gap,indent,meta,rep;function f(t){return t<10?"0"+t:t}function this_value(){return this.valueOf()}function quote(t){return rx_escapable.lastIndex=0,rx_escapable.test(t)?'"'+t.replace(rx_escapable,function(t){var e=meta[t];return"string"==typeof e?e:"\\u"+("0000"+t.charCodeAt(0).toString(16)).slice(-4)})+'"':'"'+t+'"'}function str(t,e){var r,n,o,u,f,a=gap,i=e[t];switch(i&&"object"==typeof i&&"function"==typeof i.toJSON&&(i=i.toJSON(t)),"function"==typeof rep&&(i=rep.call(e,t,i)),typeof i){case"string":return quote(i);case"number":return isFinite(i)?String(i):"null";case"boolean":case"null":return String(i);case"object":if(!i)return"null";if(gap+=indent,f=[],"[object Array]"===Object.prototype.toString.apply(i)){for(u=i.length,r=0;r<u;r+=1)f[r]=str(r,i)||"null";return o=0===f.length?"[]":gap?"[\n"+gap+f.join(",\n"+gap)+"\n"+a+"]":"["+f.join(",")+"]",gap=a,o}if(rep&&"object"==typeof rep)for(u=rep.length,r=0;r<u;r+=1)"string"==typeof rep[r]&&(o=str(n=rep[r],i))&&f.push(quote(n)+(gap?": ":":")+o);else for(n in i)Object.prototype.hasOwnProperty.call(i,n)&&(o=str(n,i))&&f.push(quote(n)+(gap?": ":":")+o);return o=0===f.length?"{}":gap?"{\n"+gap+f.join(",\n"+gap)+"\n"+a+"}":"{"+f.join(",")+"}",gap=a,o}}"function"!=typeof Date.prototype.toJSON&&(Date.prototype.toJSON=function(){return isFinite(this.valueOf())?this.getUTCFullYear()+"-"+f(this.getUTCMonth()+1)+"-"+f(this.getUTCDate())+"T"+f(this.getUTCHours())+":"+f(this.getUTCMinutes())+":"+f(this.getUTCSeconds())+"Z":null},Boolean.prototype.toJSON=this_value,Number.prototype.toJSON=this_value,String.prototype.toJSON=this_value),"function"!=typeof JSON.stringify&&(meta={"\b":"\\b","\t":"\\t","\n":"\\n","\f":"\\f","\r":"\\r",'"':'\\"',"\\":"\\\\"},JSON.stringify=function(t,e,r){var n;if(gap="",indent="","number"==typeof r)for(n=0;n<r;n+=1)indent+=" ";else"string"==typeof r&&(indent=r);if(rep=e,e&&"function"!=typeof e&&("object"!=typeof e||"number"!=typeof e.length))throw new Error("JSON.stringify");return str("",{"":t})}),"function"!=typeof JSON.parse&&(JSON.parse=function(text,reviver){var j;function walk(t,e){var r,n,o=t[e];if(o&&"object"==typeof o)for(r in o)Object.prototype.hasOwnProperty.call(o,r)&&(void 0!==(n=walk(o,r))?o[r]=n:delete o[r]);return reviver.call(t,e,o)}if(text=String(text),rx_dangerous.lastIndex=0,rx_dangerous.test(text)&&(text=text.replace(rx_dangerous,function(t){return"\\u"+("0000"+t.charCodeAt(0).toString(16)).slice(-4)})),rx_one.test(text.replace(rx_two,"@").replace(rx_three,"]").replace(rx_four,"")))return j=eval("("+text+")"),"function"==typeof reviver?walk({"":j},""):j;throw new SyntaxError("JSON.parse")})}();// ---------------------------------- //// ----- EXTENDSCRIPT PONYFILLS -----function __objectFreeze(obj) { return obj; }// ---------------------------------- //var version = "0.0.1";
+(function (thisObj) {// ----- EXTENDSCRIPT INCLUDES ------ //"object"!=typeof JSON&&(JSON={}),function(){"use strict";var rx_one=/^[\],:{}\s]*$/,rx_two=/\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g,rx_three=/"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g,rx_four=/(?:^|:|,)(?:\s*\[)+/g,rx_escapable=/[\\\"\u0000-\u001f\u007f-\u009f\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g,rx_dangerous=/[\u0000\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g,gap,indent,meta,rep;function f(t){return t<10?"0"+t:t}function this_value(){return this.valueOf()}function quote(t){return rx_escapable.lastIndex=0,rx_escapable.test(t)?'"'+t.replace(rx_escapable,function(t){var e=meta[t];return"string"==typeof e?e:"\\u"+("0000"+t.charCodeAt(0).toString(16)).slice(-4)})+'"':'"'+t+'"'}function str(t,e){var r,n,o,u,f,a=gap,i=e[t];switch(i&&"object"==typeof i&&"function"==typeof i.toJSON&&(i=i.toJSON(t)),"function"==typeof rep&&(i=rep.call(e,t,i)),typeof i){case"string":return quote(i);case"number":return isFinite(i)?String(i):"null";case"boolean":case"null":return String(i);case"object":if(!i)return"null";if(gap+=indent,f=[],"[object Array]"===Object.prototype.toString.apply(i)){for(u=i.length,r=0;r<u;r+=1)f[r]=str(r,i)||"null";return o=0===f.length?"[]":gap?"[\n"+gap+f.join(",\n"+gap)+"\n"+a+"]":"["+f.join(",")+"]",gap=a,o}if(rep&&"object"==typeof rep)for(u=rep.length,r=0;r<u;r+=1)"string"==typeof rep[r]&&(o=str(n=rep[r],i))&&f.push(quote(n)+(gap?": ":":")+o);else for(n in i)Object.prototype.hasOwnProperty.call(i,n)&&(o=str(n,i))&&f.push(quote(n)+(gap?": ":":")+o);return o=0===f.length?"{}":gap?"{\n"+gap+f.join(",\n"+gap)+"\n"+a+"}":"{"+f.join(",")+"}",gap=a,o}}"function"!=typeof Date.prototype.toJSON&&(Date.prototype.toJSON=function(){return isFinite(this.valueOf())?this.getUTCFullYear()+"-"+f(this.getUTCMonth()+1)+"-"+f(this.getUTCDate())+"T"+f(this.getUTCHours())+":"+f(this.getUTCMinutes())+":"+f(this.getUTCSeconds())+"Z":null},Boolean.prototype.toJSON=this_value,Number.prototype.toJSON=this_value,String.prototype.toJSON=this_value),"function"!=typeof JSON.stringify&&(meta={"\b":"\\b","\t":"\\t","\n":"\\n","\f":"\\f","\r":"\\r",'"':'\\"',"\\":"\\\\"},JSON.stringify=function(t,e,r){var n;if(gap="",indent="","number"==typeof r)for(n=0;n<r;n+=1)indent+=" ";else"string"==typeof r&&(indent=r);if(rep=e,e&&"function"!=typeof e&&("object"!=typeof e||"number"!=typeof e.length))throw new Error("JSON.stringify");return str("",{"":t})}),"function"!=typeof JSON.parse&&(JSON.parse=function(text,reviver){var j;function walk(t,e){var r,n,o=t[e];if(o&&"object"==typeof o)for(r in o)Object.prototype.hasOwnProperty.call(o,r)&&(void 0!==(n=walk(o,r))?o[r]=n:delete o[r]);return reviver.call(t,e,o)}if(text=String(text),rx_dangerous.lastIndex=0,rx_dangerous.test(text)&&(text=text.replace(rx_dangerous,function(t){return"\\u"+("0000"+t.charCodeAt(0).toString(16)).slice(-4)})),rx_one.test(text.replace(rx_two,"@").replace(rx_three,"]").replace(rx_four,"")))return j=eval("("+text+")"),"function"==typeof reviver?walk({"":j},""):j;throw new SyntaxError("JSON.parse")})}();// ---------------------------------- //// ----- EXTENDSCRIPT PONYFILLS -----function __objectFreeze(obj) { return obj; }function __isArray(arr) { try { return arr instanceof Array; } catch (e) { return false; } };// ---------------------------------- //var version = "0.0.1";
 
 var config = {
   version: version,
@@ -97,17 +97,26 @@ var getScaleFactor = function getScaleFactor(currLayer, comp) {
   var scaleFactor = Math.min(scaleFactorX, scaleFactorY, 1);
   return scaleFactor;
 };
+var getLayerProps = function getLayerProps(layer) {
+  var layerOpacity = layer.property("Opacity");
+  var layerPos = layer.property("Position");
+  var layerScale = layer.property("Scale");
+  return [layerOpacity, layerPos, layerScale];
+};
+var getAnimDirection = function getAnimDirection(layer) {
+  var layerPos = layer.property("Position");
+  if (!(layerPos instanceof Property)) return "none";
+  var positionOne = layerPos.valueAtTime(0, false);
+  var positionTwo = layerPos.valueAtTime(2, false);
+  if (positionOne[0] !== positionTwo[0]) return "left";else if (positionOne[1] !== positionTwo[1]) return "down";
+  return "none";
+};
 
 var upOut = function upOut(layerArray, slide, currLayer, layerPos, prevPos, layerOpacity) {
   if (layerArray[slide].prev === "keep") {
-    if (slide === 1) {
-      var topAligned = currLayer.height * (currLayer.scale.value[1] / 100) / 2;
-      layerPos.setValueAtTime(2, [prevPos[0], topAligned]);
-    } else {
-      var newLayerHeight = layerArray[slide].layer.height * layerArray[slide].scaleFactor;
-      var calcVal = prevPos[1] - (newLayerHeight - (1920 - layerArray[slide - 1].layer.position.valueAtTime(2, false)[1] - layerArray[slide - 1].layer.height * layerArray[slide - 1].scaleFactor / 2));
-      layerPos.setValueAtTime(2, [prevPos[0], calcVal]);
-    }
+    var newLayerHeight = layerArray[slide].layer.height * layerArray[slide].scaleFactor;
+    var calcVal = prevPos[1] - newLayerHeight;
+    layerPos.setValueAtTime(2, [prevPos[0], calcVal]);
   } else {
     layerPos.setValueAtTime(2, [prevPos[0], -1 * layerArray[slide].layer.height / 2]);
     layerOpacity.setValueAtTime(0, 100);
@@ -117,12 +126,10 @@ var upOut = function upOut(layerArray, slide, currLayer, layerPos, prevPos, laye
 var downIn = function downIn(layerArray, slide, currLayer, layerPos, prevLayer) {
   layerPos.setValueAtTime(0, [540, 1920]);
   if (layerArray[slide].prev === "keep") {
-    if (slide === 1) {
-      layerPos.setValueAtTime(2, [540, prevLayer.layer.height * prevLayer.scaleFactor + currLayer.height * (currLayer.scale.value[1] / 100) / 2]);
-    } else {
-      var calcVal = 1920 - currLayer.height * (currLayer.scale.value[1] / 100) / 2;
-      layerPos.setValueAtTime(2, [540, calcVal]);
-    }
+    var prevLayerHeight = prevLayer.layer.height * prevLayer.scaleFactor;
+    var currLayerHeight = currLayer.height * (currLayer.scale.value[1] / 100);
+    var prevLayerPos = prevLayer.layer.position.value[1] - currLayerHeight;
+    layerPos.setValueAtTime(2, [540, prevLayerPos + currLayerHeight / 2 + prevLayerHeight / 2]);
   } else {
     layerPos.setValueAtTime(2, [540, 960]);
   }
@@ -221,6 +228,12 @@ var forEachLayer = function forEachLayer(comp, callback) {
   }
 };
 
+function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray(arr, i) || _nonIterableRest(); }
+function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
+function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i]; return arr2; }
+function _iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
+function _arrayWithHoles(arr) { if (__isArray(arr)) return arr; }
 var animatePhotoshop = function animatePhotoshop(layerArray) {
   app.beginUndoGroup("Split Comp");
   var comp = app.project.activeItem;
@@ -355,37 +368,39 @@ var updateValues = function updateValues() {
       for (var j = 1; j <= currentComp.numLayers; j++) {
         var currentLayer = currentComp.layer(j);
         for (var k = 0; k < layers.length; k++) {
-          if (layers[k].name == currentLayer.name) {
-            var currLayerPos = currentLayer.property("Position");
-            var oldLayerPos = layers[k].layer.property("Position");
-            var currLayerScale = currentLayer.property("Scale");
-            var oldLayerScale = layers[k].layer.property("Scale");
-            var currLayerOpacity = currentLayer.property("Opacity");
-            var oldLayerOpacity = layers[k].layer.property("Opacity");
-            if (!(currLayerOpacity instanceof Property)) continue;
-            if (!(oldLayerOpacity instanceof Property)) continue;
-            if (!(currLayerPos instanceof Property)) continue;
-            if (!(oldLayerPos instanceof Property)) continue;
-            if (!(currLayerScale instanceof Property)) continue;
-            if (!(oldLayerScale instanceof Property)) continue;
-            var parentLayer = layers[k].layer.parent;
-            var actualPosition = oldLayerPos.valueAtTime(15, true);
-            if (parentLayer) {
-              var childPosition = layers[k].layer.transform.position.value;
-              var parentPosition = parentLayer.transform.position.value;
-              actualPosition = [childPosition[0] + parentPosition[0], childPosition[1] + parentPosition[1]];
-            }
-            currLayerPos.setValueAtTime(0, actualPosition);
-            currLayerScale.setValueAtTime(0, oldLayerScale.valueAtTime(15, false));
-            currLayerOpacity.setValueAtTime(0, oldLayerOpacity.valueAtTime(15, false));
+          if (layers[k].name !== currentLayer.name) continue;
+          var _getLayerProps = getLayerProps(currentLayer),
+            _getLayerProps2 = _slicedToArray(_getLayerProps, 3),
+            currOpacity = _getLayerProps2[0],
+            currPos = _getLayerProps2[1],
+            currScale = _getLayerProps2[2];
+          var _getLayerProps3 = getLayerProps(layers[k].layer),
+            _getLayerProps4 = _slicedToArray(_getLayerProps3, 3),
+            oldOpacity = _getLayerProps4[0],
+            oldPos = _getLayerProps4[1],
+            oldScale = _getLayerProps4[2];
+          var parentLayer = layers[k].layer.parent;
+          var actualPosition = oldPos.valueAtTime(15, true);
+          if (parentLayer) {
+            var childPosition = layers[k].layer.transform.position.value;
+            var parentPosition = parentLayer.transform.position.value;
+            actualPosition = [childPosition[0] + parentPosition[0], childPosition[1] + parentPosition[1]];
+          }
+          var direction = getAnimDirection(currentLayer);
+          if (direction == "none") continue;
+          var currPosPrev = currPos.valueAtTime(2, true);
+          currPos.setValueAtTime(0, actualPosition);
+          currScale.setValueAtTime(0, oldScale.valueAtTime(15, false));
+          currOpacity.setValueAtTime(0, oldOpacity.valueAtTime(15, false));
+          if (direction === "left") currPos.setValueAtTime(2, [currPosPrev[0], actualPosition[1]]);
+          if (direction === "down") {
+            currPos.setValueAtTime(2, [actualPosition[0], currPosPrev[1]]);
           }
         }
       }
       return;
     }
-    if (parentFolder.item(_i) == comp) {
-      pastCurrentComp = true;
-    }
+    if (parentFolder.item(_i) == comp) pastCurrentComp = true;
   }
   app.endUndoGroup();
 };

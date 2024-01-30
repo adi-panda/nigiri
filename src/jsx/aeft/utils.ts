@@ -92,3 +92,20 @@ const alertEaseValues = (comp: CompItem) => {
     }
   }
 };
+
+export const getLayerProps = (layer: Layer) => {
+  let layerOpacity = layer.property("Opacity");
+  let layerPos = layer.property("Position");
+  let layerScale = layer.property("Scale");
+  return [layerOpacity as Property, layerPos as Property, layerScale as Property];
+};
+
+export const getAnimDirection = (layer: Layer) => {
+  let layerPos = layer.property("Position");
+  if (!(layerPos instanceof Property)) return "none";
+  const positionOne = layerPos.valueAtTime(0, false);
+  const positionTwo = layerPos.valueAtTime(2, false);
+  if (positionOne[0] !== positionTwo[0]) return "left";
+  else if (positionOne[1] !== positionTwo[1]) return "down";
+  return "none";
+};
