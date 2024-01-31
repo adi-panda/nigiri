@@ -9,10 +9,23 @@ export const upOut = (
   layerOpacity: Property
 ) => {
   if (layerArray[slide].prev === "keep") {
-    let newLayerHeight =
-      layerArray[slide].layer.height * layerArray[slide].scaleFactor;
-    let calcVal = prevPos[1] - newLayerHeight;
-    layerPos.setValueAtTime(2, [prevPos[0], calcVal]);
+    if (slide === 1) {
+      let topAligned = (currLayer.height * (currLayer.scale.value[1] / 100)) / 2;
+      layerPos.setValueAtTime(2, [prevPos[0], topAligned]);
+    } else {
+      let newLayerHeight =
+        layerArray[slide].layer.height * layerArray[slide].scaleFactor;
+      let calcVal =
+        prevPos[1] -
+        (newLayerHeight -
+          (1920 -
+            layerArray[slide - 1].layer.position.valueAtTime(2, false)[1] -
+            (layerArray[slide - 1].layer.height *
+              layerArray[slide - 1].scaleFactor) /
+              2));
+
+      layerPos.setValueAtTime(2, [prevPos[0], calcVal]);
+    }
   } else {
     layerPos.setValueAtTime(2, [
       prevPos[0],
@@ -32,13 +45,16 @@ export const downIn = (
 ) => {
   layerPos.setValueAtTime(0, [540, 1920]);
   if (layerArray[slide].prev === "keep") {
-    let prevLayerHeight = prevLayer.layer.height * prevLayer.scaleFactor;
-    let currLayerHeight = currLayer.height * (currLayer.scale.value[1] / 100);
-    let prevLayerPos = prevLayer.layer.position.value[1] - currLayerHeight;
-    layerPos.setValueAtTime(2, [
-      540,
-      prevLayerPos + currLayerHeight / 2 + prevLayerHeight / 2,
-    ]);
+    if (slide === 1) {
+      layerPos.setValueAtTime(2, [
+        540,
+        prevLayer.layer.height * prevLayer.scaleFactor +
+          (currLayer.height * (currLayer.scale.value[1] / 100)) / 2,
+      ]);
+    } else {
+      let calcVal = 1920 - (currLayer.height * (currLayer.scale.value[1] / 100)) / 2;
+      layerPos.setValueAtTime(2, [540, calcVal]);
+    }
   } else {
     layerPos.setValueAtTime(2, [540, 960]);
   }
