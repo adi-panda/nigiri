@@ -114,9 +114,14 @@ var getAnimDirection = function getAnimDirection(layer) {
 
 var upOut = function upOut(layerArray, slide, currLayer, layerPos, prevPos, layerOpacity) {
   if (layerArray[slide].prev === "keep") {
-    var newLayerHeight = layerArray[slide].layer.height * layerArray[slide].scaleFactor;
-    var calcVal = prevPos[1] - newLayerHeight;
-    layerPos.setValueAtTime(2, [prevPos[0], calcVal]);
+    if (slide === 1) {
+      var topAligned = currLayer.height * (currLayer.scale.value[1] / 100) / 2;
+      layerPos.setValueAtTime(2, [prevPos[0], topAligned]);
+    } else {
+      var newLayerHeight = layerArray[slide].layer.height * layerArray[slide].scaleFactor;
+      var calcVal = prevPos[1] - (newLayerHeight - (1920 - layerArray[slide - 1].layer.position.valueAtTime(2, false)[1] - layerArray[slide - 1].layer.height * layerArray[slide - 1].scaleFactor / 2));
+      layerPos.setValueAtTime(2, [prevPos[0], calcVal]);
+    }
   } else {
     layerPos.setValueAtTime(2, [prevPos[0], -1 * layerArray[slide].layer.height / 2]);
     layerOpacity.setValueAtTime(0, 100);
@@ -126,10 +131,12 @@ var upOut = function upOut(layerArray, slide, currLayer, layerPos, prevPos, laye
 var downIn = function downIn(layerArray, slide, currLayer, layerPos, prevLayer) {
   layerPos.setValueAtTime(0, [540, 1920]);
   if (layerArray[slide].prev === "keep") {
-    var prevLayerHeight = prevLayer.layer.height * prevLayer.scaleFactor;
-    var currLayerHeight = currLayer.height * (currLayer.scale.value[1] / 100);
-    var prevLayerPos = prevLayer.layer.position.value[1] - currLayerHeight;
-    layerPos.setValueAtTime(2, [540, prevLayerPos + currLayerHeight / 2 + prevLayerHeight / 2]);
+    if (slide === 1) {
+      layerPos.setValueAtTime(2, [540, prevLayer.layer.height * prevLayer.scaleFactor + currLayer.height * (currLayer.scale.value[1] / 100) / 2]);
+    } else {
+      var calcVal = 1920 - currLayer.height * (currLayer.scale.value[1] / 100) / 2;
+      layerPos.setValueAtTime(2, [540, calcVal]);
+    }
   } else {
     layerPos.setValueAtTime(2, [540, 960]);
   }

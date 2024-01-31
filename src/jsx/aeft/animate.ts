@@ -16,9 +16,9 @@ export const animateLayer = (
       let darkBG = newComp.layers.addSolid([0, 0, 0], "Darken", 1080, 1920, 55);
       let darkBGOpacity = darkBG.property("Opacity");
       if (!(darkBGOpacity instanceof Property)) return;
+      darkBGOpacity.setValueAtTime(1.5, 55);
       if (darkenIndex === slide) {
         darkBGOpacity.setValueAtTime(0, 0);
-        darkBGOpacity.setValueAtTime(1.5, 55);
       }
       darkBG.moveAfter(newComp.layer(slide - darkenIndex + 2));
     }
@@ -42,10 +42,7 @@ const animateLayerIn = (
   if (!(layerOpacity instanceof Property)) return;
   if (!(layerScale instanceof Property)) return;
 
-  layerScale.setValueAtTime(2, [
-    currLayer.scale.value[0],
-    currLayer.scale.value[0],
-  ]);
+  layerScale.setValueAtTime(2, [currLayer.scale.value[0], currLayer.scale.value[0]]);
 
   if (layerArray[slide].in === "down") {
     downIn(layerArray, slide, currLayer, layerPos, prevLayer);
