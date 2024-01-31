@@ -174,9 +174,9 @@ var animateLayer = function animateLayer(currLayer, slide, index, layerArray, ne
       var darkBG = newComp.layers.addSolid([0, 0, 0], "Darken", 1080, 1920, 55);
       var darkBGOpacity = darkBG.property("Opacity");
       if (!(darkBGOpacity instanceof Property)) return;
+      darkBGOpacity.setValueAtTime(1.5, 55);
       if (darkenIndex === slide) {
         darkBGOpacity.setValueAtTime(0, 0);
-        darkBGOpacity.setValueAtTime(1.5, 55);
       }
       darkBG.moveAfter(newComp.layer(slide - darkenIndex + 2));
     }
@@ -355,6 +355,7 @@ var getPanels = function getPanels() {
 };
 var updateValues = function updateValues() {
   app.beginUndoGroup("Update Values");
+  alert("This will update all values in the comp to the current time");
   var comp = app.project.activeItem;
   if (!(comp instanceof CompItem)) return;
   var layers = [];
@@ -394,7 +395,6 @@ var updateValues = function updateValues() {
             actualPosition = [childPosition[0] + parentPosition[0], childPosition[1] + parentPosition[1]];
           }
           var direction = getAnimDirection(currentLayer);
-          if (direction == "none") continue;
           var currPosPrev = currPos.valueAtTime(2, true);
           currPos.setValueAtTime(0, actualPosition);
           currScale.setValueAtTime(0, oldScale.valueAtTime(15, false));

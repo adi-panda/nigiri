@@ -147,6 +147,7 @@ export const getPanels = (): LayerObj[] => {
 
 export const updateValues = () => {
   app.beginUndoGroup("Update Values");
+  alert("This will update all values in the comp to the current time");
   let comp = app.project.activeItem;
   if (!(comp instanceof CompItem)) return;
   let layers = [];
@@ -182,7 +183,6 @@ export const updateValues = () => {
             ];
           }
           const direction = getAnimDirection(currentLayer);
-          if (direction == "none") continue;
           let currPosPrev = currPos.valueAtTime(2, true);
           currPos.setValueAtTime(0, actualPosition);
           currScale.setValueAtTime(0, oldScale.valueAtTime(15, false));
