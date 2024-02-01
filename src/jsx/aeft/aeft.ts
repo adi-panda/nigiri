@@ -34,6 +34,9 @@ export const animatePhotoshop = (layerArray: LayerObj[]) => {
       );
       newComp.parentFolder = newFolder;
       newComp.layers.addSolid([255, 255, 255], "Background", 1080, 1920, 1);
+      const newMarker = new MarkerValue("Anim End");
+      newMarker.label = 3;
+      newComp.markerProperty.setValueAtTime(2, newMarker);
       for (let j = 0; j <= i; j++) {
         let currentLayer = layers[j].layer;
         if (!(currentLayer instanceof AVLayer)) continue;
@@ -57,6 +60,8 @@ export const animatePhotoshop = (layerArray: LayerObj[]) => {
 };
 
 export const render = () => {
+  let outputFolder = new Folder(app.project.file?.parent.fsName + "/output");
+  outputFolder.create();
   for (let i = 1; i <= app.project.numItems; i++) {
     let currentFolder = app.project.item(i);
     if (!(currentFolder instanceof FolderItem)) continue;
@@ -90,7 +95,11 @@ export const render = () => {
       });
       if (greatest > 0) currentComp.workAreaDuration = greatest;
       else currentComp.workAreaDuration = 1;
-      app.project.renderQueue.items.add(currentComp);
+      let newItem = app.project.renderQueue.items.add(currentComp);
+      // newItem.outputModule(1).applyTemplate("H.264");
+      newItem.outputModule(1).file = new File(
+        outputFolder.fsName + "/" + currentComp.name + ".mov"
+      );
     }
   }
 };
@@ -108,6 +117,9 @@ export const panLayer = () => {
   if (!(newNullPos instanceof Property)) return;
   let oldPos = currPos.valueAtTime(0, true);
   curr.parent = newNull;
+  const myMarker = new MarkerValue("Pan End");
+  myMarker.label = 4;
+  comp.markerProperty.setValueAtTime(6, myMarker);
   newNullPos.setValueAtTime(0, [
     1080 - (curr.width * (curr.scale.value[0] / 100)) / 2,
     newNull.position.value[1],
@@ -147,7 +159,6 @@ export const getPanels = (): LayerObj[] => {
 
 export const updateValues = () => {
   app.beginUndoGroup("Update Values");
-  alert("This will update all values in the comp to the current time");
   let comp = app.project.activeItem;
   if (!(comp instanceof CompItem)) return;
   let layers = [];

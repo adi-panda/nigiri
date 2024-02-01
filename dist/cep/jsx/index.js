@@ -255,6 +255,9 @@ var animatePhotoshop = function animatePhotoshop(layerArray) {
       var newComp = app.project.items.addComp(comp.name + "_" + currentCount, 1080, 1920, 1, 15, 24);
       newComp.parentFolder = newFolder;
       newComp.layers.addSolid([255, 255, 255], "Background", 1080, 1920, 1);
+      var newMarker = new MarkerValue("Anim End");
+      newMarker.label = 3;
+      newComp.markerProperty.setValueAtTime(2, newMarker);
       for (var j = 0; j <= i; j++) {
         var currentLayer = layers[j].layer;
         if (!(currentLayer instanceof AVLayer)) continue;
@@ -273,6 +276,9 @@ var animatePhotoshop = function animatePhotoshop(layerArray) {
   return;
 };
 var render = function render() {
+  var _app$project$file;
+  var outputFolder = new Folder(((_app$project$file = app.project.file) === null || _app$project$file === void 0 ? void 0 : _app$project$file.parent.fsName) + "/output");
+  outputFolder.create();
   for (var i = 1; i <= app.project.numItems; i++) {
     var currentFolder = app.project.item(i);
     if (!(currentFolder instanceof FolderItem)) continue;
@@ -302,7 +308,9 @@ var render = function render() {
           greatest = Math.max(greatest, greateastTime);
         });
         if (greatest > 0) currentComp.workAreaDuration = greatest;else currentComp.workAreaDuration = 1;
-        app.project.renderQueue.items.add(currentComp);
+        var newItem = app.project.renderQueue.items.add(currentComp);
+        // newItem.outputModule(1).applyTemplate("H.264");
+        newItem.outputModule(1).file = new File(outputFolder.fsName + "/" + currentComp.name + ".mov");
       },
       _ret;
     for (var j = 1; j <= currentFolder.numItems; j++) {
@@ -324,6 +332,9 @@ var panLayer = function panLayer() {
   if (!(newNullPos instanceof Property)) return;
   currPos.valueAtTime(0, true);
   curr.parent = newNull;
+  var myMarker = new MarkerValue("Pan End");
+  myMarker.label = 4;
+  comp.markerProperty.setValueAtTime(6, myMarker);
   newNullPos.setValueAtTime(0, [1080 - curr.width * (curr.scale.value[0] / 100) / 2, newNull.position.value[1]]);
   newNullPos.setValueAtTime(6, [curr.width * (curr.scale.value[0] / 100) / 2, newNull.position.value[1]]);
   newNullPos.setTemporalEaseAtKey(1, [slowFastSlow[0]], [slowFastSlow[1]]);
@@ -355,7 +366,6 @@ var getPanels = function getPanels() {
 };
 var updateValues = function updateValues() {
   app.beginUndoGroup("Update Values");
-  alert("This will update all values in the comp to the current time");
   var comp = app.project.activeItem;
   if (!(comp instanceof CompItem)) return;
   var layers = [];
