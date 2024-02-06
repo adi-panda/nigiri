@@ -6,8 +6,9 @@
 
   let layers: LayerObj[] = [];
   let backgroundColor = "rgb(35, 35, 35)";
-  let outDialog = false;
-  let outDialogIndex = 0;
+  const outTransitions = ["up", "right", "fade", "none"];
+  const inTransitions = ["down", "left"];
+  const prevBehaviors = ["keep", "flush"];
   const getLayers = () => {
     if (window.cep) {
       evalTS("getPanels").then((res) => {
@@ -23,10 +24,12 @@
     evalTS("animatePhotoshop", layers);
   };
   const panLayer = () => {
-    evalTS("panLayer");
+    evalTS("panLayer", null);
   };
   const renderComps = () => {
-    evalTS("render");
+    evalTS("render").then((res) => {
+      console.log(res);
+    });
   };
   if (window.cep) {
     subscribeBackgroundColor((color) => {
@@ -47,128 +50,131 @@
     >
     <button on:click={getLayers}>Load!</button>
     <button class="button" on:click={renderComps}>Render!</button>
+    <button
+      class="button"
+      on:click={() => {
+        evalTS("addAudios");
+      }}>Speak!</button
+    >
   </div>
   <div class="panel-item-title">
     <span>Layer</span>
     <span>In</span>
-    <span>Out</span>
     <span>Prev</span>
     <span>Count</span>
     <span>Darken</span>
   </div>
   <div class="panel-container">
     {#each layers as layer}
-      <div class="panel-item">
-        <span>{layer.index + ". " + layer.name}</span>
-        <!-- In -->
-        <select bind:value={layer.in}>
-          <option value="down">Down</option>
-          <option value="left">Left</option>
-        </select>
-        <!-- Out -->
-        <button
-          on:click={() => {
-            outDialog = !outDialog;
-            outDialogIndex = layer.index - 1;
-          }}
-          class="out-button"
-        >
-          Out
-        </button>
-        <!-- Prev -->
-        <select bind:value={layer.prev}>
-          <option value="keep">Keep</option>
-          <option value="flush">Flush</option>
-        </select>
-        <input
-          type="number"
-          class="number-input"
-          min="1"
-          bind:value={layer.count}
-        />
-        <input type="checkbox" bind:checked={layer.darken} />
+      <div class="panel-item-parent">
+        <div class="panel-item">
+          <span><i>{layer.index + ". " + layer.name}</i></span>
+          <!-- In -->
+          <button
+            class="list-button"
+            on:click={() => {
+              let inIndex = inTransitions.indexOf(layer.in);
+              layer.in = inTransitions[(inIndex + 1) % inTransitions.length];
+            }}
+          >
+            {layer.in}
+          </button>
+          <!-- Out -->
+          <button
+            class="list-button"
+            on:click={() => {
+              let prevIndex = prevBehaviors.indexOf(layer.prev);
+              layer.prev =
+                prevBehaviors[(prevIndex + 1) % prevBehaviors.length];
+              for (let i = 0; i < layer.index - 1; i++) {
+                for (
+                  let j = layer.index - i - 1;
+                  j < layers[i].out.length;
+                  j++
+                ) {
+                  if (layer.prev === "flush") {
+                    layers[i].out[j] = "x";
+                  } else if (layer.prev === "keep") {
+                    layers[i].out[j] = "up";
+                  }
+                }
+              }
+            }}
+          >
+            {layer.prev}
+          </button>
+          <!-- Count -->
+          <input
+            type="number"
+            class="number-input"
+            min="1"
+            bind:value={layer.count}
+          />
+          <input type="checkbox" bind:checked={layer.darken} />
+        </div>
+        <div class="out-items">
+          <span><b>Out: </b> </span>
+          {#each layers[layer.index - 1].out as outTransition, i}
+            <div class="flex-row">
+              <span
+                >{layers.length -
+                  layers[layer.index - 1].out.length +
+                  i +
+                  1}.</span
+              >
+              {#if outTransition !== "x"}
+                <button
+                  class="out-button"
+                  on:click={() => {
+                    let outTransitionIndex =
+                      outTransitions.indexOf(outTransition);
+                    outTransition =
+                      outTransitions[
+                        (outTransitionIndex + 1) % outTransitions.length
+                      ];
+                  }}
+                >
+                  {outTransition}
+                </button>
+              {/if}
+            </div>
+          {/each}
+        </div>
       </div>
     {/each}
-    {#if outDialog}
-      <div class="out-dialog">
-        <span>Layer: {outDialogIndex + 1} Out</span>
-        {#each layers[outDialogIndex].out as outTransition, i}
-          <div class="flex-row">
-            <span
-              >{layers.length -
-                layers[outDialogIndex].out.length +
-                i +
-                1}.</span
-            >
-            <select bind:value={outTransition}>
-              <option value="up">Up</option>
-              <option value="right">Right</option>
-            </select>
-          </div>
-        {/each}
-        <button
-          on:click={() => {
-            outDialog = false;
-          }}>Close</button
-        >
-      </div>
-    {/if}
   </div>
 </div>
 
 <style lang="scss">
-  .app {
+  .panel-item-parent {
     display: flex;
     flex-direction: column;
-    align-items: center;
     width: 100%;
-    overflow: auto;
-    height: 100vh;
+    gap: 0.25rem;
+    margin-bottom: 0.25rem;
   }
-  .flex-row {
+  .out-items {
     display: flex;
     flex-direction: row;
     align-items: center;
-    justify-content: center;
-    gap: 0.1rem;
-  }
-  .out-dialog {
-    position: absolute;
-    top: 0;
-    left: 0;
-    backdrop-filter: blur(5px);
-    border-radius: 1rem;
-    background-color: rgba(0, 0, 0, 0.5);
-    z-index: 100;
-    display: flex;
-    flex-direction: column;
-    padding: 1rem;
-    gap: 0.25rem;
-    justify-content: center;
-    align-items: center;
+    gap: 0.5rem;
   }
   .panel-item {
     display: grid;
-    grid-template-columns: 7rem 3.5rem 3.5rem 3.5rem 2rem 3rem;
+    grid-template-columns: 7rem 3.5rem 3.5rem 2rem 3rem;
     align-items: center;
     width: 100%;
   }
   .panel-item-title {
     display: grid;
-    grid-template-columns: 7rem 3.5rem 3.5rem 3.5rem 3.5rem 3rem;
+    grid-template-columns: 7rem 3.5rem 3.5rem 3.5rem 3rem;
     align-items: center;
     margin-bottom: 0.75rem;
     width: 100%;
     span {
       font-weight: bold;
+      font-size: 0.75rem;
     }
-  }
-  span {
-    font-size: 0.75rem;
-  }
-  input,
-  select {
-    width: 100%;
   }
   .panel-container {
     display: flex;
@@ -176,29 +182,40 @@
     align-items: left;
     width: 100%;
   }
-  button {
-    font-size: 0.75rem;
-    background-color: rgba(0, 0, 0, 0);
-    padding: 0.5rem;
+  .out-button {
+    justify-content: center;
+    align-items: center;
     text-align: center;
     vertical-align: middle;
-    color: white;
-    border: #ff6666 solid 0.2rem;
-    border-radius: 1rem;
-    margin-bottom: 1rem;
-    outline: none;
-  }
-  .out-button {
-    text-align: bottom;
-    vertical-align: bottom;
-    justify-self: bottom;
     color: #ff6666;
-    border: none;
+    border: 1px solid #ff6666;
     margin-bottom: 0rem;
-    padding: 0;
-    height: 1rem;
+    line-height: 0 !important; /* NEW */
   }
-  button:hover {
-    background-color: #d9d9d915;
+  .list-button {
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    vertical-align: middle;
+    border: 1px solid #ff6666;
+    height: 1.5rem;
+    border-radius: 0.3rem;
+    background-color: #0f0f0f;
+    margin-bottom: 0rem;
+    line-height: 0 !important; /* NEW */
+  }
+  input {
+    text-align: center;
+    border-radius: 0.3rem;
+    color: white;
+    border: 1px solid #ff6666;
+    height: 1.3rem;
+    background-color: #0f0f0f;
+    margin-bottom: 0rem;
+  }
+
+  input[type="checkbox"] {
+    height: 1.3rem;
+    color: #ff6666;
   }
 </style>

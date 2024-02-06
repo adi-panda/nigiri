@@ -1,5 +1,5 @@
-import { LayerObj, getScaleFactor } from "./utils";
-import { downIn, leftIn, rightOut, upOut } from "./subAnimations";
+import { LayerObj, getLayerProps, getScaleFactor } from "./utils";
+import { downIn, fadeOut, leftIn, noneOut, rightOut, upOut } from "./subAnimations";
 import { fastSlowEase } from "./easeValues";
 
 export const animateLayer = (
@@ -66,13 +66,7 @@ const animateLayerOut = (
   index: number,
   slide: number
 ) => {
-  let layerPos = currLayer.property("Position");
-  let layerOpacity = currLayer.property("Opacity");
-  let layerScale = currLayer.property("Scale");
-
-  if (!(layerPos instanceof Property)) return;
-  if (!(layerOpacity instanceof Property)) return;
-  if (!(layerScale instanceof Property)) return;
+  const [layerOpacity, layerPos, layerScale] = getLayerProps(currLayer);
 
   let prevPos = layerArray[index].layer.position.valueAtTime(2, false);
   layerPos.setValueAtTime(0, prevPos);
@@ -82,9 +76,17 @@ const animateLayerOut = (
     upOut(layerArray, slide, currLayer, layerPos, prevPos, layerOpacity);
   } else if (layerArray[index].out[slide - 1 - index] === "right") {
     rightOut(layerArray, slide, currLayer, layerPos, prevPos, layerOpacity);
+  } else if (layerArray[index].out[slide - 1 - index] === "fade") {
+    fadeOut(layerOpacity);
+  } else if (layerArray[index].out[slide - 1 - index] === "none") {
+    noneOut(layerPos, prevPos);
+  } else if (layerArray[index].out[slide - 1 - index] === "x") {
+    alert("bruh");
   }
 
   // Set the ease to be a smooth bezier.
-  layerPos.setTemporalEaseAtKey(1, [fastSlowEase[0]], [fastSlowEase[1]]);
-  layerPos.setTemporalEaseAtKey(2, [fastSlowEase[2]], [fastSlowEase[3]]);
+  if (layerArray[index].out[slide - 1 - index] !== "fade") {
+    layerPos.setTemporalEaseAtKey(1, [fastSlowEase[0]], [fastSlowEase[1]]);
+    layerPos.setTemporalEaseAtKey(2, [fastSlowEase[2]], [fastSlowEase[3]]);
+  }
 };

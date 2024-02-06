@@ -20,6 +20,7 @@ export const sortLayers = (
   newComp.parentFolder = parentFold;
   for (let i = 1; i <= comp.numLayers; i++) {
     let currLayer = comp.layer(i);
+    if (currLayer.name === "Background") continue;
     if (!(currLayer instanceof AVLayer)) continue;
     let newLayer = newComp.layers.add(currLayer.source);
     let scaleFactor = getScaleFactor(newLayer, newComp);
@@ -108,4 +109,31 @@ export const getAnimDirection = (layer: Layer) => {
   if (positionOne[0] !== positionTwo[0]) return "left";
   else if (positionOne[1] !== positionTwo[1]) return "down";
   return "none";
+};
+
+export const realHeight = (layer: AVLayer) => {
+  return layer.height * (layer.scale.value[1] / 100);
+};
+
+export const realWidth = (layer: AVLayer) => {
+  return layer.width * (layer.scale.value[0] / 100);
+};
+
+export const realHeightArr = (layer: LayerObj) => {
+  return layer.layer.height * layer.scaleFactor;
+};
+
+export const realWidthArr = (layer: LayerObj) => {
+  return layer.layer.width * layer.scaleFactor;
+};
+
+export const getNumRealLayers = (comp: CompItem) => {
+  let numLayers = 0;
+  for (let i = 1; i <= comp.numLayers; i++) {
+    if (comp.layer(i).name === "Background") {
+      continue;
+    }
+    numLayers++;
+  }
+  return numLayers;
 };

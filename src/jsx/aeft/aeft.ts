@@ -1,4 +1,9 @@
-import { getAnimDirection, getLayerProps, sortLayers } from "./utils";
+import {
+  getAnimDirection,
+  getLayerProps,
+  getNumRealLayers,
+  sortLayers,
+} from "./utils";
 import { animateLayer } from "./animate";
 import { slowFastSlow } from "./easeValues";
 import { forEachLayer } from "./aeft-utils";
@@ -22,6 +27,7 @@ export const animatePhotoshop = (layerArray: LayerObj[]) => {
   let layers = sortLayers(comp, layerArray, newFolder);
   let currentCount = 1;
   let darkenIndex = -1;
+  let comps = [];
   for (let i = 0; i < layers.length; i++) {
     for (let k = 0; k < layers[i].count; k++) {
       let newComp = app.project.items.addComp(
@@ -32,6 +38,7 @@ export const animatePhotoshop = (layerArray: LayerObj[]) => {
         15,
         24
       );
+      comps.push(newComp);
       newComp.parentFolder = newFolder;
       newComp.layers.addSolid([255, 255, 255], "Background", 1080, 1920, 1);
       const newMarker = new MarkerValue("Anim End");
@@ -40,6 +47,11 @@ export const animatePhotoshop = (layerArray: LayerObj[]) => {
       for (let j = 0; j <= i; j++) {
         let currentLayer = layers[j].layer;
         if (!(currentLayer instanceof AVLayer)) continue;
+        //slide -> i
+        //index -> j
+        if (i != j && layerArray[j].out[i - 1 - j] === "x") {
+          continue;
+        }
         let newLayer = newComp.layers.add(currentLayer.source);
         let newLayerScale = newLayer.property("Scale");
         if (!(newLayerScale instanceof Property)) continue;
@@ -55,6 +67,10 @@ export const animatePhotoshop = (layerArray: LayerObj[]) => {
       currentCount++;
     }
   }
+  for (let i = comps.length - 1; i >= 0; i--) {
+    comps[i].openInViewer();
+  }
+
   app.endUndoGroup();
   return;
 };
@@ -100,15 +116,18 @@ export const render = () => {
       newItem.outputModule(1).file = new File(
         outputFolder.fsName + "/" + currentComp.name + ".mov"
       );
+      newItem
+        .outputModule(1)
+        .applyTemplate("H.264 - Match Render Settings -  5 Mbps");
     }
   }
 };
 
-export const panLayer = () => {
+export const panLayer = (curr: Layer) => {
   app.beginUndoGroup("Pan Layer");
   let comp = app.project.activeItem;
   if (!(comp instanceof CompItem)) return;
-  let curr = comp.selectedLayers[0];
+  if (!curr) curr = comp.selectedLayers[0];
   if (!(curr instanceof AVLayer)) return;
   let newNull = comp.layers.addNull();
   let newNullPos = newNull.property("Position");
@@ -137,9 +156,11 @@ export const getPanels = (): LayerObj[] => {
   let comp = app.project.activeItem;
   if (!(comp instanceof CompItem)) return [];
   let layers = [];
-  for (let i = 1; i <= comp.numLayers; i++) {
+  const numLayers = getNumRealLayers(comp);
+  for (let i = 1; i <= numLayers; i++) {
+    if (comp.layer(i).name === "Background") continue;
     let out = [];
-    for (let j = comp.numLayers; j > i; j--) {
+    for (let j = numLayers; j > i; j--) {
       out.push("up");
     }
     let layerObj = {
@@ -155,6 +176,37 @@ export const getPanels = (): LayerObj[] => {
     layers.push(layerObj);
   }
   return layers;
+};
+
+export const addAudios = () => {
+  //Import all files in the audio folder
+  app.beginUndoGroup("Add Audio");
+  let audioContainer = app.project.items.addFolder("Voice-Lines");
+  let audioFolder = new Folder(app.project.file?.parent.fsName + "/voice-lines");
+  let audioFiles = audioFolder.getFiles();
+  for (let i = 0; i < audioFiles.length; i++) {
+    let currentFile = audioFiles[i];
+    if (!(currentFile instanceof File)) continue;
+    let audioImport = app.project.importFile(new ImportOptions(currentFile));
+    audioImport.parentFolder = audioContainer;
+  }
+  for (let i = 1; i <= app.project.numItems; i++) {
+    let currentFolder = app.project.item(i);
+    if (!(currentFolder instanceof FolderItem)) continue;
+    if (currentFolder.name.indexOf("Page_") < 0) continue;
+    for (let j = 1; j <= currentFolder.numItems; j++) {
+      let currentComp = currentFolder.item(j);
+      if (!(currentComp instanceof CompItem)) continue;
+      if (currentComp.name === "internal") continue;
+      for (let k = 1; k <= audioContainer.numItems; k++) {
+        let currentAudio = audioContainer.item(k);
+        if (!(currentAudio instanceof FootageItem)) continue;
+        if (currentAudio.name.indexOf(currentComp.name) < 0) continue;
+        currentComp.layers.add(currentAudio);
+      }
+    }
+  }
+  app.endUndoGroup();
 };
 
 export const updateValues = () => {
