@@ -4,13 +4,14 @@ export type LayerObj = {
   layer: AVLayer;
   count: number;
   scaleFactor: number;
+  pan: boolean;
   in: string;
   out: string;
   prev: string;
   darken: boolean;
 };
 
-export const sortLayers = (
+export const getLayers = (
   comp: CompItem,
   layerArray: any[],
   parentFold: FolderItem
@@ -23,7 +24,7 @@ export const sortLayers = (
     if (currLayer.name === "Background") continue;
     if (!(currLayer instanceof AVLayer)) continue;
     let newLayer = newComp.layers.add(currLayer.source);
-    let scaleFactor = getScaleFactor(newLayer, newComp);
+    const [scaleFactor, pan] = getScaleFactor(newLayer, newComp);
     let layerObj = {
       name: comp.layer(i).name,
       index: i,
@@ -32,26 +33,21 @@ export const sortLayers = (
       in: layerArray[i - 1].in,
       out: layerArray[i - 1].out,
       scaleFactor: scaleFactor,
+      pan: pan,
       prev: layerArray[i - 1].prev,
       darken: layerArray[i - 1].darken,
     };
     layers.push(layerObj);
   }
-  layers.sort((a, b) => {
-    if (parseInt(a.name) < parseInt(b.name)) {
-      return -1;
-    }
-    if (parseInt(a.name) > parseInt(b.name)) {
-      return 1;
-    }
-    return 0;
-  });
   return layers;
 };
 
-export const getScaleFactor = (currLayer: AVLayer, comp: CompItem) => {
+export const getScaleFactor = (
+  currLayer: AVLayer,
+  comp: CompItem
+): [number, boolean] => {
   let layerScale = currLayer.property("Scale");
-  if (!(layerScale instanceof Property)) return 1;
+  if (!(layerScale instanceof Property)) return [1, false];
   let scaleFactorY = 100;
   let scaleFactorX = 100;
   if (currLayer.height > comp.height) {
@@ -61,7 +57,13 @@ export const getScaleFactor = (currLayer: AVLayer, comp: CompItem) => {
     scaleFactorX = comp.width / currLayer.width;
   }
   let scaleFactor = Math.min(scaleFactorX, scaleFactorY, 1);
-  return scaleFactor;
+  const ratio = currLayer.width / currLayer.height;
+  let pan = false;
+  if (ratio > 1.25) {
+    scaleFactor = ((ratio - 1) / 2 + 1) * scaleFactor;
+    pan = true;
+  }
+  return [scaleFactor, pan];
 };
 
 // ALERT EASE VALUES
@@ -112,6 +114,7 @@ export const getAnimDirection = (layer: Layer) => {
 };
 
 export const realHeight = (layer: AVLayer) => {
+  // alert(layer.height + " " + layer.scale.value[1] / 100 + " " + layer.name);
   return layer.height * (layer.scale.value[1] / 100);
 };
 

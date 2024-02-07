@@ -18,20 +18,30 @@ export const upOut = (
   layerOpacity: Property
 ) => {
   if (layerArray[slide].prev === "keep") {
-    if (slide === 1) {
-      let topAligned = realHeight(currLayer) / 2;
-      layerPos.setValueAtTime(TRANSITION_TIME, [prevPos[0], topAligned]);
+    const combinedHeight = realHeight(currLayer) + realHeightArr(layerArray[slide]);
+    if (slide === 1 && combinedHeight < SCREEN_HEIGHT) {
+      const screenCenter = SCREEN_HEIGHT / 2;
+      const topPosition = screenCenter - combinedHeight / 2;
+      const newCenter = topPosition + realHeight(currLayer) / 2;
+      layerPos.setValueAtTime(TRANSITION_TIME, [prevPos[0], newCenter]);
     } else {
       const newLayerHeight = realHeightArr(layerArray[slide]);
       const bottomPanel = layerArray[slide - 1].layer;
-      const bottomPanelPos = bottomPanel.position.valueAtTime(
-        TRANSITION_TIME,
-        false
-      )[1];
+      let bottomPanelPos = bottomPanel.position.valueAtTime(15, false);
+      const bototomPanelParent = bottomPanel.parent;
+      if (bototomPanelParent) {
+        const childPosition = bottomPanel.position.valueAtTime(15, false);
+        let parentPosition = bototomPanelParent.transform.position.value;
+        bottomPanelPos = [
+          childPosition[0] + parentPosition[0],
+          childPosition[1] + parentPosition[1],
+        ];
+      }
       const bottomPanelHeight = realHeight(bottomPanel);
       let newPos =
         prevPos[1] -
-        (newLayerHeight - (SCREEN_HEIGHT - bottomPanelPos - bottomPanelHeight / 2));
+        (newLayerHeight -
+          (SCREEN_HEIGHT - bottomPanelPos[1] - bottomPanelHeight / 2));
       layerPos.setValueAtTime(TRANSITION_TIME, [prevPos[0], newPos]);
     }
   } else if (layerArray[slide].prev === "flush") {
@@ -57,11 +67,13 @@ export const downIn = (
 ) => {
   layerPos.setValueAtTime(0, [SCREEN_WIDTH / 2, SCREEN_HEIGHT]);
   if (layerArray[slide].prev === "keep") {
-    if (slide === 1) {
-      layerPos.setValueAtTime(TRANSITION_TIME, [
-        SCREEN_WIDTH / 2,
-        realHeightArr(prevLayer) + realHeight(currLayer) / 2,
-      ]);
+    const combinedHeight =
+      realHeight(currLayer) + realHeightArr(layerArray[slide - 1]);
+    if (slide === 1 && combinedHeight < SCREEN_HEIGHT) {
+      const screenCenter = SCREEN_HEIGHT / 2;
+      const bottomPosition = screenCenter + combinedHeight / 2;
+      const newCenter = bottomPosition - realHeight(currLayer) / 2;
+      layerPos.setValueAtTime(TRANSITION_TIME, [SCREEN_WIDTH / 2, newCenter]);
     } else {
       let newPos = SCREEN_HEIGHT - realHeight(currLayer) / 2;
       layerPos.setValueAtTime(TRANSITION_TIME, [SCREEN_WIDTH / 2, newPos]);
@@ -92,6 +104,11 @@ export const leftIn = (
 export const fadeOut = (layerOpacity: Property) => {
   layerOpacity.setValueAtTime(0, 100);
   layerOpacity.setValueAtTime(1, 0);
+};
+
+export const fadeIn = (layerOpacity: Property) => {
+  layerOpacity.setValueAtTime(0, 0);
+  layerOpacity.setValueAtTime(1, 100);
 };
 
 export const rightOut = (

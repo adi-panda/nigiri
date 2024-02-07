@@ -2,10 +2,10 @@ import {
   getAnimDirection,
   getLayerProps,
   getNumRealLayers,
-  sortLayers,
+  getLayers,
 } from "./utils";
-import { animateLayer } from "./animate";
-import { slowFastSlow } from "./easeValues";
+import { animateLayer, panLayer } from "./animate";
+export { panLayer };
 import { forEachLayer } from "./aeft-utils";
 
 type LayerObj = {
@@ -24,7 +24,7 @@ export const animatePhotoshop = (layerArray: LayerObj[]) => {
   if (!(comp instanceof CompItem)) return;
   let newFolder = app.project.items.addFolder("Page_" + comp.name);
   if (layerArray.length == 0) layerArray = getPanels();
-  let layers = sortLayers(comp, layerArray, newFolder);
+  let layers = getLayers(comp, layerArray, newFolder);
   let currentCount = 1;
   let darkenIndex = -1;
   let comps = [];
@@ -47,8 +47,6 @@ export const animatePhotoshop = (layerArray: LayerObj[]) => {
       for (let j = 0; j <= i; j++) {
         let currentLayer = layers[j].layer;
         if (!(currentLayer instanceof AVLayer)) continue;
-        //slide -> i
-        //index -> j
         if (i != j && layerArray[j].out[i - 1 - j] === "x") {
           continue;
         }
@@ -70,7 +68,6 @@ export const animatePhotoshop = (layerArray: LayerObj[]) => {
   for (let i = comps.length - 1; i >= 0; i--) {
     comps[i].openInViewer();
   }
-
   app.endUndoGroup();
   return;
 };
@@ -123,35 +120,6 @@ export const render = () => {
   }
 };
 
-export const panLayer = (curr: Layer) => {
-  app.beginUndoGroup("Pan Layer");
-  let comp = app.project.activeItem;
-  if (!(comp instanceof CompItem)) return;
-  if (!curr) curr = comp.selectedLayers[0];
-  if (!(curr instanceof AVLayer)) return;
-  let newNull = comp.layers.addNull();
-  let newNullPos = newNull.property("Position");
-  let currPos = curr.property("Position");
-  if (!(currPos instanceof Property)) return;
-  if (!(newNullPos instanceof Property)) return;
-  let oldPos = currPos.valueAtTime(0, true);
-  curr.parent = newNull;
-  const myMarker = new MarkerValue("Pan End");
-  myMarker.label = 4;
-  comp.markerProperty.setValueAtTime(6, myMarker);
-  newNullPos.setValueAtTime(0, [
-    1080 - (curr.width * (curr.scale.value[0] / 100)) / 2,
-    newNull.position.value[1],
-  ]);
-  newNullPos.setValueAtTime(6, [
-    (curr.width * (curr.scale.value[0] / 100)) / 2,
-    newNull.position.value[1],
-  ]);
-  newNullPos.setTemporalEaseAtKey(1, [slowFastSlow[0]], [slowFastSlow[1]]);
-  newNullPos.setTemporalEaseAtKey(2, [slowFastSlow[2]], [slowFastSlow[3]]);
-  app.endUndoGroup();
-};
-
 export const getPanels = (): LayerObj[] => {
   let comp = app.project.activeItem;
   if (!(comp instanceof CompItem)) return [];
@@ -163,12 +131,22 @@ export const getPanels = (): LayerObj[] => {
     for (let j = numLayers; j > i; j--) {
       out.push("up");
     }
+    let inAnim = "down";
+    const currLayer = comp.layer(i);
+    if (!(currLayer instanceof AVLayer)) continue;
+    if (currLayer.height > currLayer.width) {
+      inAnim = "left";
+      // if (prevLayer) prevLayer.out[0] = "right";
+      for (let j = 0; j < layers.length; j++) {
+        layers[j].out[i - j - 2] = "right";
+      }
+    }
     let layerObj = {
       name: comp.layer(i).name,
       index: i,
       count: 1,
       scaleFactor: 1,
-      in: "down",
+      in: inAnim,
       out: out,
       prev: "keep",
       darken: false,

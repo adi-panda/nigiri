@@ -50,7 +50,13 @@ var config = {
 
 var ns = config.id;
 
-var sortLayers = function sortLayers(comp, layerArray, parentFold) {
+function _slicedToArray$2(arr, i) { return _arrayWithHoles$2(arr) || _iterableToArrayLimit$2(arr, i) || _unsupportedIterableToArray$2(arr, i) || _nonIterableRest$2(); }
+function _nonIterableRest$2() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function _unsupportedIterableToArray$2(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray$2(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray$2(o, minLen); }
+function _arrayLikeToArray$2(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i]; return arr2; }
+function _iterableToArrayLimit$2(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
+function _arrayWithHoles$2(arr) { if (__isArray(arr)) return arr; }
+var getLayers = function getLayers(comp, layerArray, parentFold) {
   var layers = [];
   var newComp = app.project.items.addComp("internal", 1080, 1920, 1, 15, 24);
   newComp.parentFolder = parentFold;
@@ -59,7 +65,10 @@ var sortLayers = function sortLayers(comp, layerArray, parentFold) {
     if (currLayer.name === "Background") continue;
     if (!(currLayer instanceof AVLayer)) continue;
     var newLayer = newComp.layers.add(currLayer.source);
-    var scaleFactor = getScaleFactor(newLayer, newComp);
+    var _getScaleFactor = getScaleFactor(newLayer, newComp),
+      _getScaleFactor2 = _slicedToArray$2(_getScaleFactor, 2),
+      scaleFactor = _getScaleFactor2[0],
+      pan = _getScaleFactor2[1];
     var layerObj = {
       name: comp.layer(i).name,
       index: i,
@@ -68,25 +77,17 @@ var sortLayers = function sortLayers(comp, layerArray, parentFold) {
       "in": layerArray[i - 1]["in"],
       out: layerArray[i - 1].out,
       scaleFactor: scaleFactor,
+      pan: pan,
       prev: layerArray[i - 1].prev,
       darken: layerArray[i - 1].darken
     };
     layers.push(layerObj);
   }
-  layers.sort(function (a, b) {
-    if (parseInt(a.name) < parseInt(b.name)) {
-      return -1;
-    }
-    if (parseInt(a.name) > parseInt(b.name)) {
-      return 1;
-    }
-    return 0;
-  });
   return layers;
 };
 var getScaleFactor = function getScaleFactor(currLayer, comp) {
   var layerScale = currLayer.property("Scale");
-  if (!(layerScale instanceof Property)) return 1;
+  if (!(layerScale instanceof Property)) return [1, false];
   var scaleFactorY = 100;
   var scaleFactorX = 100;
   if (currLayer.height > comp.height) {
@@ -96,7 +97,13 @@ var getScaleFactor = function getScaleFactor(currLayer, comp) {
     scaleFactorX = comp.width / currLayer.width;
   }
   var scaleFactor = Math.min(scaleFactorX, scaleFactorY, 1);
-  return scaleFactor;
+  var ratio = currLayer.width / currLayer.height;
+  var pan = false;
+  if (ratio > 1.25) {
+    scaleFactor = ((ratio - 1) / 2 + 1) * scaleFactor;
+    pan = true;
+  }
+  return [scaleFactor, pan];
 };
 var getLayerProps = function getLayerProps(layer) {
   var layerOpacity = layer.property("Opacity");
@@ -113,6 +120,7 @@ var getAnimDirection = function getAnimDirection(layer) {
   return "none";
 };
 var realHeight = function realHeight(layer) {
+  // alert(layer.height + " " + layer.scale.value[1] / 100 + " " + layer.name);
   return layer.height * (layer.scale.value[1] / 100);
 };
 var realWidth = function realWidth(layer) {
@@ -140,15 +148,24 @@ var SCREEN_WIDTH = 1080;
 var TRANSITION_TIME = 2;
 var upOut = function upOut(layerArray, slide, currLayer, layerPos, prevPos, layerOpacity) {
   if (layerArray[slide].prev === "keep") {
-    if (slide === 1) {
-      var topAligned = realHeight(currLayer) / 2;
-      layerPos.setValueAtTime(TRANSITION_TIME, [prevPos[0], topAligned]);
+    var combinedHeight = realHeight(currLayer) + realHeightArr(layerArray[slide]);
+    if (slide === 1 && combinedHeight < SCREEN_HEIGHT) {
+      var screenCenter = SCREEN_HEIGHT / 2;
+      var topPosition = screenCenter - combinedHeight / 2;
+      var newCenter = topPosition + realHeight(currLayer) / 2;
+      layerPos.setValueAtTime(TRANSITION_TIME, [prevPos[0], newCenter]);
     } else {
       var newLayerHeight = realHeightArr(layerArray[slide]);
       var bottomPanel = layerArray[slide - 1].layer;
-      var bottomPanelPos = bottomPanel.position.valueAtTime(TRANSITION_TIME, false)[1];
+      var bottomPanelPos = bottomPanel.position.valueAtTime(15, false);
+      var bototomPanelParent = bottomPanel.parent;
+      if (bototomPanelParent) {
+        var childPosition = bottomPanel.position.valueAtTime(15, false);
+        var parentPosition = bototomPanelParent.transform.position.value;
+        bottomPanelPos = [childPosition[0] + parentPosition[0], childPosition[1] + parentPosition[1]];
+      }
       var bottomPanelHeight = realHeight(bottomPanel);
-      var newPos = prevPos[1] - (newLayerHeight - (SCREEN_HEIGHT - bottomPanelPos - bottomPanelHeight / 2));
+      var newPos = prevPos[1] - (newLayerHeight - (SCREEN_HEIGHT - bottomPanelPos[1] - bottomPanelHeight / 2));
       layerPos.setValueAtTime(TRANSITION_TIME, [prevPos[0], newPos]);
     }
   } else if (layerArray[slide].prev === "flush") {
@@ -163,8 +180,12 @@ var noneOut = function noneOut(layerPos, prevPos) {
 var downIn = function downIn(layerArray, slide, currLayer, layerPos, prevLayer) {
   layerPos.setValueAtTime(0, [SCREEN_WIDTH / 2, SCREEN_HEIGHT]);
   if (layerArray[slide].prev === "keep") {
-    if (slide === 1) {
-      layerPos.setValueAtTime(TRANSITION_TIME, [SCREEN_WIDTH / 2, realHeightArr(prevLayer) + realHeight(currLayer) / 2]);
+    var combinedHeight = realHeight(currLayer) + realHeightArr(layerArray[slide - 1]);
+    if (slide === 1 && combinedHeight < SCREEN_HEIGHT) {
+      var screenCenter = SCREEN_HEIGHT / 2;
+      var bottomPosition = screenCenter + combinedHeight / 2;
+      var newCenter = bottomPosition - realHeight(currLayer) / 2;
+      layerPos.setValueAtTime(TRANSITION_TIME, [SCREEN_WIDTH / 2, newCenter]);
     } else {
       var newPos = SCREEN_HEIGHT - realHeight(currLayer) / 2;
       layerPos.setValueAtTime(TRANSITION_TIME, [SCREEN_WIDTH / 2, newPos]);
@@ -187,6 +208,10 @@ var leftIn = function leftIn(layerArray, slide, currLayer, layerPos, prevLayer) 
 var fadeOut = function fadeOut(layerOpacity) {
   layerOpacity.setValueAtTime(0, 100);
   layerOpacity.setValueAtTime(1, 0);
+};
+var fadeIn = function fadeIn(layerOpacity) {
+  layerOpacity.setValueAtTime(0, 0);
+  layerOpacity.setValueAtTime(1, 100);
 };
 var rightOut = function rightOut(layerArray, slide, currLayer, layerPos, prevPos, layerOpacity) {
   if (layerArray[slide].prev === "keep") {
@@ -225,6 +250,9 @@ var animateLayer = function animateLayer(currLayer, slide, index, layerArray, ne
       }
       darkBG.moveAfter(newComp.layer(slide - darkenIndex + 2));
     }
+    if (layerArray[index].pan) {
+      panLayer(currLayer, newComp);
+    }
   } else {
     animateLayerOut(currLayer, layerArray, index, slide);
   }
@@ -233,24 +261,22 @@ var animateLayerIn = function animateLayerIn(currLayer, layerArray, index, slide
   var layerPos = currLayer.property("Position");
   var layerOpacity = currLayer.property("Opacity");
   var layerScale = currLayer.property("Scale");
-  var prevLayer = layerArray[index - 1];
+  layerArray[index - 1];
   if (!(layerPos instanceof Property)) return;
   if (!(layerOpacity instanceof Property)) return;
   if (!(layerScale instanceof Property)) return;
-  layerScale.setValueAtTime(2, [currLayer.scale.value[0], currLayer.scale.value[0]]);
   if (layerArray[slide]["in"] === "down") {
-    downIn(layerArray, slide, currLayer, layerPos, prevLayer);
+    downIn(layerArray, slide, currLayer, layerPos);
   } else if (layerArray[slide]["in"] === "left") {
     leftIn(layerArray, slide, currLayer, layerPos);
+  } else if (layerArray[slide]["in"] === "fade") {
+    fadeIn(layerOpacity);
+    return;
   }
-
-  // currLayer.height * (currLayer.scale.value[1] / 100);
-
   // Set the ease to be a smooth bezier.
   layerPos.setTemporalEaseAtKey(1, [fastSlowEase[0]], [fastSlowEase[1]]);
   layerPos.setTemporalEaseAtKey(2, [fastSlowEase[2]], [fastSlowEase[3]]);
-  layerOpacity.setValueAtTime(0, 0);
-  layerOpacity.setValueAtTime(1, 100);
+  fadeIn(layerOpacity);
 };
 var animateLayerOut = function animateLayerOut(currLayer, layerArray, index, slide) {
   var _getLayerProps = getLayerProps(currLayer),
@@ -258,7 +284,13 @@ var animateLayerOut = function animateLayerOut(currLayer, layerArray, index, sli
     layerOpacity = _getLayerProps2[0],
     layerPos = _getLayerProps2[1];
     _getLayerProps2[2];
-  var prevPos = layerArray[index].layer.position.valueAtTime(2, false);
+  var prevPos = layerArray[index].layer.position.valueAtTime(15, false);
+  var parentLayer = layerArray[index].layer.parent;
+  if (parentLayer) {
+    var childPosition = layerArray[index].layer.position.valueAtTime(15, false);
+    var parentPosition = parentLayer.position.valueAtTime(15, false);
+    prevPos = [childPosition[0] + parentPosition[0], childPosition[1] + parentPosition[1]];
+  }
   layerPos.setValueAtTime(0, prevPos);
   if (layerArray[slide].darken) return;
   if (layerArray[index].out[slide - 1 - index] === "up") {
@@ -278,6 +310,31 @@ var animateLayerOut = function animateLayerOut(currLayer, layerArray, index, sli
     layerPos.setTemporalEaseAtKey(1, [fastSlowEase[0]], [fastSlowEase[1]]);
     layerPos.setTemporalEaseAtKey(2, [fastSlowEase[2]], [fastSlowEase[3]]);
   }
+};
+var panLayer = function panLayer(curr, compItem) {
+  if (!curr) app.beginUndoGroup("Pan Layer");
+  var comp = compItem;
+  var activeComp = app.project.activeItem;
+  if (!(activeComp instanceof CompItem)) return;
+  if (!compItem) comp = activeComp;
+  if (!curr) curr = comp.selectedLayers[0];
+  if (!(curr instanceof AVLayer)) return;
+  var newNull = comp.layers.addNull();
+  var newNullPos = newNull.property("Position");
+  var currPos = curr.property("Position");
+  if (!(currPos instanceof Property)) return;
+  if (!(newNullPos instanceof Property)) return;
+  currPos.valueAtTime(15, true);
+  curr.parent = newNull;
+  // alert(oldPos[1] + " " + newNull.position.value[1] + " " + curr.position.value[1]);
+  var myMarker = new MarkerValue("Pan End");
+  myMarker.label = 4;
+  comp.markerProperty.setValueAtTime(6, myMarker);
+  newNullPos.setValueAtTime(0, [1080 - realWidth(curr) / 2, newNull.position.value[1]]);
+  newNullPos.setValueAtTime(6, [curr.width * (curr.scale.value[0] / 100) / 2, newNull.position.value[1]]);
+  newNullPos.setTemporalEaseAtKey(1, [slowFastSlow[0]], [slowFastSlow[1]]);
+  newNullPos.setTemporalEaseAtKey(2, [slowFastSlow[2]], [slowFastSlow[3]]);
+  if (!curr) app.endUndoGroup();
 };
 
 var forEachLayer = function forEachLayer(comp, callback) {
@@ -299,7 +356,7 @@ var animatePhotoshop = function animatePhotoshop(layerArray) {
   if (!(comp instanceof CompItem)) return;
   var newFolder = app.project.items.addFolder("Page_" + comp.name);
   if (layerArray.length == 0) layerArray = getPanels();
-  var layers = sortLayers(comp, layerArray, newFolder);
+  var layers = getLayers(comp, layerArray, newFolder);
   var currentCount = 1;
   var darkenIndex = -1;
   var comps = [];
@@ -315,8 +372,6 @@ var animatePhotoshop = function animatePhotoshop(layerArray) {
       for (var j = 0; j <= i; j++) {
         var currentLayer = layers[j].layer;
         if (!(currentLayer instanceof AVLayer)) continue;
-        //slide -> i
-        //index -> j
         if (i != j && layerArray[j].out[i - 1 - j] === "x") {
           continue;
         }
@@ -382,28 +437,6 @@ var render = function render() {
     }
   }
 };
-var panLayer = function panLayer(curr) {
-  app.beginUndoGroup("Pan Layer");
-  var comp = app.project.activeItem;
-  if (!(comp instanceof CompItem)) return;
-  if (!curr) curr = comp.selectedLayers[0];
-  if (!(curr instanceof AVLayer)) return;
-  var newNull = comp.layers.addNull();
-  var newNullPos = newNull.property("Position");
-  var currPos = curr.property("Position");
-  if (!(currPos instanceof Property)) return;
-  if (!(newNullPos instanceof Property)) return;
-  currPos.valueAtTime(0, true);
-  curr.parent = newNull;
-  var myMarker = new MarkerValue("Pan End");
-  myMarker.label = 4;
-  comp.markerProperty.setValueAtTime(6, myMarker);
-  newNullPos.setValueAtTime(0, [1080 - curr.width * (curr.scale.value[0] / 100) / 2, newNull.position.value[1]]);
-  newNullPos.setValueAtTime(6, [curr.width * (curr.scale.value[0] / 100) / 2, newNull.position.value[1]]);
-  newNullPos.setTemporalEaseAtKey(1, [slowFastSlow[0]], [slowFastSlow[1]]);
-  newNullPos.setTemporalEaseAtKey(2, [slowFastSlow[2]], [slowFastSlow[3]]);
-  app.endUndoGroup();
-};
 var getPanels = function getPanels() {
   var comp = app.project.activeItem;
   if (!(comp instanceof CompItem)) return [];
@@ -415,12 +448,22 @@ var getPanels = function getPanels() {
     for (var j = numLayers; j > i; j--) {
       out.push("up");
     }
+    var inAnim = "down";
+    var currLayer = comp.layer(i);
+    if (!(currLayer instanceof AVLayer)) continue;
+    if (currLayer.height > currLayer.width) {
+      inAnim = "left";
+      // if (prevLayer) prevLayer.out[0] = "right";
+      for (var _j = 0; _j < layers.length; _j++) {
+        layers[_j].out[i - _j - 2] = "right";
+      }
+    }
     var layerObj = {
       name: comp.layer(i).name,
       index: i,
       count: 1,
       scaleFactor: 1,
-      "in": "down",
+      "in": inAnim,
       out: out,
       prev: "keep",
       darken: false
@@ -520,9 +563,9 @@ var updateValues = function updateValues() {
 
 var aeft = /*#__PURE__*/__objectFreeze({
   __proto__: null,
+  panLayer: panLayer,
   animatePhotoshop: animatePhotoshop,
   render: render,
-  panLayer: panLayer,
   getPanels: getPanels,
   addAudios: addAudios,
   updateValues: updateValues

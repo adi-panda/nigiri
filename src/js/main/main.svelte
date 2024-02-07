@@ -3,11 +3,12 @@
   import { evalTS, subscribeBackgroundColor } from "../lib/utils/bolt";
   import { sampleLayers } from "./sample";
   import type { LayerObj } from "../global";
+  import { log } from "console";
 
   let layers: LayerObj[] = [];
   let backgroundColor = "rgb(35, 35, 35)";
   const outTransitions = ["up", "right", "fade", "none"];
-  const inTransitions = ["down", "left"];
+  const inTransitions = ["down", "left", "fade"];
   const prevBehaviors = ["keep", "flush"];
   const getLayers = () => {
     if (window.cep) {
@@ -24,7 +25,7 @@
     evalTS("animatePhotoshop", layers);
   };
   const panLayer = () => {
-    evalTS("panLayer", null);
+    evalTS("panLayer", null, null);
   };
   const renderComps = () => {
     evalTS("render").then((res) => {
@@ -70,19 +71,28 @@
         <div class="panel-item">
           <span><i>{layer.index + ". " + layer.name}</i></span>
           <!-- In -->
+
           <button
             class="list-button"
+            style={layer.index === 1
+              ? `background-color: ${backgroundColor}; border-color: ${backgroundColor}; `
+              : ""}
             on:click={() => {
+              if (layer.index === 1) return;
               let inIndex = inTransitions.indexOf(layer.in);
               layer.in = inTransitions[(inIndex + 1) % inTransitions.length];
             }}
           >
-            {layer.in}
+            {layer.index !== 1 ? layer.in : ""}
           </button>
           <!-- Out -->
           <button
             class="list-button"
+            style={layer.index === 1
+              ? `background-color: ${backgroundColor}; border-color: ${backgroundColor}; `
+              : ""}
             on:click={() => {
+              if (layer.index === 1) return;
               let prevIndex = prevBehaviors.indexOf(layer.prev);
               layer.prev =
                 prevBehaviors[(prevIndex + 1) % prevBehaviors.length];
@@ -101,7 +111,7 @@
               }
             }}
           >
-            {layer.prev}
+            {layer.index !== 1 ? layer.prev : ""}
           </button>
           <!-- Count -->
           <input
@@ -116,13 +126,13 @@
           <span><b>Out: </b> </span>
           {#each layers[layer.index - 1].out as outTransition, i}
             <div class="flex-row">
-              <span
-                >{layers.length -
-                  layers[layer.index - 1].out.length +
-                  i +
-                  1}.</span
-              >
               {#if outTransition !== "x"}
+                <span
+                  >{layers.length -
+                    layers[layer.index - 1].out.length +
+                    i +
+                    1}.</span
+                >
                 <button
                   class="out-button"
                   on:click={() => {
@@ -132,6 +142,18 @@
                       outTransitions[
                         (outTransitionIndex + 1) % outTransitions.length
                       ];
+                    for (let j = i + 1; j < layer.out.length; j++) {
+                      // console.log(j);
+                      if (
+                        outTransitions[
+                          (outTransitionIndex + 1) % outTransitions.length
+                        ] === "fade"
+                      ) {
+                        layer.out[j] = "x";
+                      } else {
+                        layer.out[j] = "up";
+                      }
+                    }
                   }}
                 >
                   {outTransition}
