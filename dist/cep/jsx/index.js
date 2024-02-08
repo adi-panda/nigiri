@@ -56,7 +56,7 @@ function _unsupportedIterableToArray$2(o, minLen) { if (!o) return; if (typeof o
 function _arrayLikeToArray$2(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i]; return arr2; }
 function _iterableToArrayLimit$2(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
 function _arrayWithHoles$2(arr) { if (__isArray(arr)) return arr; }
-var getLayers = function getLayers(comp, layerArray, parentFold) {
+var getLayers = function getLayers(comp, layerArray, parentFold, noPan) {
   var layers = [];
   var newComp = app.project.items.addComp("internal", 1080, 1920, 1, 15, 24);
   newComp.parentFolder = parentFold;
@@ -65,7 +65,7 @@ var getLayers = function getLayers(comp, layerArray, parentFold) {
     if (currLayer.name === "Background") continue;
     if (!(currLayer instanceof AVLayer)) continue;
     var newLayer = newComp.layers.add(currLayer.source);
-    var _getScaleFactor = getScaleFactor(newLayer, newComp),
+    var _getScaleFactor = getScaleFactor(newLayer, newComp, noPan),
       _getScaleFactor2 = _slicedToArray$2(_getScaleFactor, 2),
       scaleFactor = _getScaleFactor2[0],
       pan = _getScaleFactor2[1];
@@ -85,7 +85,7 @@ var getLayers = function getLayers(comp, layerArray, parentFold) {
   }
   return layers;
 };
-var getScaleFactor = function getScaleFactor(currLayer, comp) {
+var getScaleFactor = function getScaleFactor(currLayer, comp, noPan) {
   var layerScale = currLayer.property("Scale");
   if (!(layerScale instanceof Property)) return [1, false];
   var scaleFactorY = 100;
@@ -99,7 +99,7 @@ var getScaleFactor = function getScaleFactor(currLayer, comp) {
   var scaleFactor = Math.min(scaleFactorX, scaleFactorY, 1);
   var ratio = currLayer.width / currLayer.height;
   var pan = false;
-  if (ratio > 1.25) {
+  if (ratio > 2 && !noPan) {
     scaleFactor = ((ratio - 1) / 2 + 1) * scaleFactor;
     pan = true;
   }
@@ -237,7 +237,7 @@ function _unsupportedIterableToArray$1(o, minLen) { if (!o) return; if (typeof o
 function _arrayLikeToArray$1(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i]; return arr2; }
 function _iterableToArrayLimit$1(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
 function _arrayWithHoles$1(arr) { if (__isArray(arr)) return arr; }
-var animateLayer = function animateLayer(currLayer, slide, index, layerArray, newComp, darkenIndex) {
+var animateLayer = function animateLayer(currLayer, slide, index, layerArray, newComp, darkenIndex, noPan) {
   if (slide === index) {
     animateLayerIn(currLayer, layerArray, index, slide);
     if (darkenIndex != -1 && darkenIndex <= slide) {
@@ -250,7 +250,7 @@ var animateLayer = function animateLayer(currLayer, slide, index, layerArray, ne
       }
       darkBG.moveAfter(newComp.layer(slide - darkenIndex + 2));
     }
-    if (layerArray[index].pan) {
+    if (layerArray[index].pan && !noPan) {
       panLayer(currLayer, newComp);
     }
   } else {
@@ -350,13 +350,13 @@ function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o =
 function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i]; return arr2; }
 function _iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
 function _arrayWithHoles(arr) { if (__isArray(arr)) return arr; }
-var animatePhotoshop = function animatePhotoshop(layerArray) {
+var animatePhotoshop = function animatePhotoshop(layerArray, noPan) {
   app.beginUndoGroup("Split Comp");
   var comp = app.project.activeItem;
   if (!(comp instanceof CompItem)) return;
   var newFolder = app.project.items.addFolder("Page_" + comp.name);
   if (layerArray.length == 0) layerArray = getPanels();
-  var layers = getLayers(comp, layerArray, newFolder);
+  var layers = getLayers(comp, layerArray, newFolder, noPan);
   var currentCount = 1;
   var darkenIndex = -1;
   var comps = [];
@@ -380,7 +380,7 @@ var animatePhotoshop = function animatePhotoshop(layerArray) {
         if (!(newLayerScale instanceof Property)) continue;
         newLayerScale.setValue([layers[j].scaleFactor * 100, layers[j].scaleFactor * 100]);
         if (layerArray[i].darken) darkenIndex = i;
-        if (i != 0 && k == 0) animateLayer(newLayer, i, j, layers, newComp, darkenIndex);
+        if (i != 0 && k == 0) animateLayer(newLayer, i, j, layers, newComp, darkenIndex, noPan);
         layers[j].layer = newLayer;
       }
       currentCount++;

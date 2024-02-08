@@ -22,7 +22,8 @@ export const animateLayer = (
   index: number, // current layer index, e.g 0, 1, 2
   layerArray: LayerObj[],
   newComp: CompItem,
-  darkenIndex: number
+  darkenIndex: number,
+  noPan: boolean
 ) => {
   if (slide === index) {
     animateLayerIn(currLayer, layerArray, index, slide);
@@ -36,7 +37,7 @@ export const animateLayer = (
       }
       darkBG.moveAfter(newComp.layer(slide - darkenIndex + 2));
     }
-    if (layerArray[index].pan) {
+    if (layerArray[index].pan && !noPan) {
       panLayer(currLayer, newComp);
     }
   } else {

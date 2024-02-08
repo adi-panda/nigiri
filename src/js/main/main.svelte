@@ -7,6 +7,7 @@
 
   let layers: LayerObj[] = [];
   let backgroundColor = "rgb(35, 35, 35)";
+  let noPan = false;
   const outTransitions = ["up", "right", "fade", "none"];
   const inTransitions = ["down", "left", "fade"];
   const prevBehaviors = ["keep", "flush"];
@@ -22,7 +23,7 @@
   };
   const animateLayers = () => {
     console.log(layers);
-    evalTS("animatePhotoshop", layers);
+    evalTS("animatePhotoshop", layers, noPan);
   };
   const panLayer = () => {
     evalTS("panLayer", null, null);
@@ -57,6 +58,7 @@
         evalTS("addAudios");
       }}>Speak!</button
     >
+    <input type="checkbox" bind:checked={noPan} />
   </div>
   <div class="panel-item-title">
     <span>Layer</span>

@@ -14,7 +14,8 @@ export type LayerObj = {
 export const getLayers = (
   comp: CompItem,
   layerArray: any[],
-  parentFold: FolderItem
+  parentFold: FolderItem,
+  noPan: boolean
 ): LayerObj[] => {
   let layers = [];
   let newComp = app.project.items.addComp("internal", 1080, 1920, 1, 15, 24);
@@ -24,7 +25,7 @@ export const getLayers = (
     if (currLayer.name === "Background") continue;
     if (!(currLayer instanceof AVLayer)) continue;
     let newLayer = newComp.layers.add(currLayer.source);
-    const [scaleFactor, pan] = getScaleFactor(newLayer, newComp);
+    const [scaleFactor, pan] = getScaleFactor(newLayer, newComp, noPan);
     let layerObj = {
       name: comp.layer(i).name,
       index: i,
@@ -44,7 +45,8 @@ export const getLayers = (
 
 export const getScaleFactor = (
   currLayer: AVLayer,
-  comp: CompItem
+  comp: CompItem,
+  noPan: boolean
 ): [number, boolean] => {
   let layerScale = currLayer.property("Scale");
   if (!(layerScale instanceof Property)) return [1, false];
@@ -59,7 +61,7 @@ export const getScaleFactor = (
   let scaleFactor = Math.min(scaleFactorX, scaleFactorY, 1);
   const ratio = currLayer.width / currLayer.height;
   let pan = false;
-  if (ratio > 1.25) {
+  if (ratio > 2 && !noPan) {
     scaleFactor = ((ratio - 1) / 2 + 1) * scaleFactor;
     pan = true;
   }

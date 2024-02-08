@@ -18,13 +18,13 @@ type LayerObj = {
   darken: boolean;
 };
 
-export const animatePhotoshop = (layerArray: LayerObj[]) => {
+export const animatePhotoshop = (layerArray: LayerObj[], noPan: boolean) => {
   app.beginUndoGroup("Split Comp");
   let comp = app.project.activeItem;
   if (!(comp instanceof CompItem)) return;
   let newFolder = app.project.items.addFolder("Page_" + comp.name);
   if (layerArray.length == 0) layerArray = getPanels();
-  let layers = getLayers(comp, layerArray, newFolder);
+  let layers = getLayers(comp, layerArray, newFolder, noPan);
   let currentCount = 1;
   let darkenIndex = -1;
   let comps = [];
@@ -59,7 +59,7 @@ export const animatePhotoshop = (layerArray: LayerObj[]) => {
         ]);
         if (layerArray[i].darken) darkenIndex = i;
         if (i != 0 && k == 0)
-          animateLayer(newLayer, i, j, layers, newComp, darkenIndex);
+          animateLayer(newLayer, i, j, layers, newComp, darkenIndex, noPan);
         layers[j].layer = newLayer;
       }
       currentCount++;
