@@ -10,9 +10,10 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 100%;
   overflow: auto;
-  height: 100vh;
+  padding: 1rem;
+  width: calc(100% - 2rem);
+  height: calc(100vh - 2rem);
 }
 
 button {
@@ -22,8 +23,7 @@ button {
   text-align: center;
   vertical-align: middle;
   color: white;
-  border: #ff6666 solid 0.2rem;
-  border-radius: 1rem;
+  border: #ff6666 solid 2px;
   margin-bottom: 1rem;
   outline: none;
 }
@@ -43,7 +43,27 @@ select {
 .flex-row {
   display: flex;
   flex-direction: row;
-  align-items: center;
-  justify-content: center;
+  gap: 0.25rem;
+  margin-bottom: 0rem;
+  button {
+    margin-bottom: 0rem;
+  }
+}
+
+.grid-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.25rem;
+  margin-bottom: 0rem;
+  button {
+    margin-bottom: 0rem;
+  }
+}
+
+.flex-column {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin-bottom: 0.5rem;
   gap: 0.1rem;
 }

@@ -9,13 +9,13 @@ export type LayerObj = {
   out: string;
   prev: string;
   darken: boolean;
+  padding: number;
 };
 
 export const getLayers = (
   comp: CompItem,
   layerArray: any[],
-  parentFold: FolderItem,
-  noPan: boolean
+  parentFold: FolderItem
 ): LayerObj[] => {
   let layers = [];
   let newComp = app.project.items.addComp("internal", 1080, 1920, 1, 15, 24);
@@ -25,7 +25,7 @@ export const getLayers = (
     if (currLayer.name === "Background") continue;
     if (!(currLayer instanceof AVLayer)) continue;
     let newLayer = newComp.layers.add(currLayer.source);
-    const [scaleFactor, pan] = getScaleFactor(newLayer, newComp, noPan);
+    const scaleFactor = getScaleFactor(newLayer, newComp, layerArray[i - 1].pan);
     let layerObj = {
       name: comp.layer(i).name,
       index: i,
@@ -34,7 +34,8 @@ export const getLayers = (
       in: layerArray[i - 1].in,
       out: layerArray[i - 1].out,
       scaleFactor: scaleFactor,
-      pan: pan,
+      pan: layerArray[i - 1].pan,
+      padding: layerArray[i - 1].padding,
       prev: layerArray[i - 1].prev,
       darken: layerArray[i - 1].darken,
     };
@@ -43,13 +44,9 @@ export const getLayers = (
   return layers;
 };
 
-export const getScaleFactor = (
-  currLayer: AVLayer,
-  comp: CompItem,
-  noPan: boolean
-): [number, boolean] => {
+export const getScaleFactor = (currLayer: AVLayer, comp: CompItem, pan: boolean) => {
   let layerScale = currLayer.property("Scale");
-  if (!(layerScale instanceof Property)) return [1, false];
+  if (!(layerScale instanceof Property)) return 1;
   let scaleFactorY = 100;
   let scaleFactorX = 100;
   if (currLayer.height > comp.height) {
@@ -60,12 +57,13 @@ export const getScaleFactor = (
   }
   let scaleFactor = Math.min(scaleFactorX, scaleFactorY, 1);
   const ratio = currLayer.width / currLayer.height;
-  let pan = false;
-  if (ratio > 2 && !noPan) {
-    scaleFactor = ((ratio - 1) / 2 + 1) * scaleFactor;
-    pan = true;
-  }
-  return [scaleFactor, pan];
+  if (pan) scaleFactor = ((ratio - 1) / 2 + 1) * scaleFactor;
+  return scaleFactor;
+};
+
+export const shouldPan = (layer: AVLayer) => {
+  const ratio = layer.width / layer.height;
+  return ratio > 1.5;
 };
 
 // ALERT EASE VALUES

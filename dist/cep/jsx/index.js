@@ -50,13 +50,7 @@ var config = {
 
 var ns = config.id;
 
-function _slicedToArray$2(arr, i) { return _arrayWithHoles$2(arr) || _iterableToArrayLimit$2(arr, i) || _unsupportedIterableToArray$2(arr, i) || _nonIterableRest$2(); }
-function _nonIterableRest$2() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
-function _unsupportedIterableToArray$2(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray$2(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray$2(o, minLen); }
-function _arrayLikeToArray$2(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i]; return arr2; }
-function _iterableToArrayLimit$2(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
-function _arrayWithHoles$2(arr) { if (__isArray(arr)) return arr; }
-var getLayers = function getLayers(comp, layerArray, parentFold, noPan) {
+var getLayers = function getLayers(comp, layerArray, parentFold) {
   var layers = [];
   var newComp = app.project.items.addComp("internal", 1080, 1920, 1, 15, 24);
   newComp.parentFolder = parentFold;
@@ -65,10 +59,7 @@ var getLayers = function getLayers(comp, layerArray, parentFold, noPan) {
     if (currLayer.name === "Background") continue;
     if (!(currLayer instanceof AVLayer)) continue;
     var newLayer = newComp.layers.add(currLayer.source);
-    var _getScaleFactor = getScaleFactor(newLayer, newComp, noPan),
-      _getScaleFactor2 = _slicedToArray$2(_getScaleFactor, 2),
-      scaleFactor = _getScaleFactor2[0],
-      pan = _getScaleFactor2[1];
+    var scaleFactor = getScaleFactor(newLayer, newComp, layerArray[i - 1].pan);
     var layerObj = {
       name: comp.layer(i).name,
       index: i,
@@ -77,7 +68,8 @@ var getLayers = function getLayers(comp, layerArray, parentFold, noPan) {
       "in": layerArray[i - 1]["in"],
       out: layerArray[i - 1].out,
       scaleFactor: scaleFactor,
-      pan: pan,
+      pan: layerArray[i - 1].pan,
+      padding: layerArray[i - 1].padding,
       prev: layerArray[i - 1].prev,
       darken: layerArray[i - 1].darken
     };
@@ -85,9 +77,9 @@ var getLayers = function getLayers(comp, layerArray, parentFold, noPan) {
   }
   return layers;
 };
-var getScaleFactor = function getScaleFactor(currLayer, comp, noPan) {
+var getScaleFactor = function getScaleFactor(currLayer, comp, pan) {
   var layerScale = currLayer.property("Scale");
-  if (!(layerScale instanceof Property)) return [1, false];
+  if (!(layerScale instanceof Property)) return 1;
   var scaleFactorY = 100;
   var scaleFactorX = 100;
   if (currLayer.height > comp.height) {
@@ -98,12 +90,12 @@ var getScaleFactor = function getScaleFactor(currLayer, comp, noPan) {
   }
   var scaleFactor = Math.min(scaleFactorX, scaleFactorY, 1);
   var ratio = currLayer.width / currLayer.height;
-  var pan = false;
-  if (ratio > 2 && !noPan) {
-    scaleFactor = ((ratio - 1) / 2 + 1) * scaleFactor;
-    pan = true;
-  }
-  return [scaleFactor, pan];
+  if (pan) scaleFactor = ((ratio - 1) / 2 + 1) * scaleFactor;
+  return scaleFactor;
+};
+var shouldPan = function shouldPan(layer) {
+  var ratio = layer.width / layer.height;
+  return ratio > 1.5;
 };
 var getLayerProps = function getLayerProps(layer) {
   var layerOpacity = layer.property("Opacity");
@@ -146,13 +138,13 @@ var getNumRealLayers = function getNumRealLayers(comp) {
 var SCREEN_HEIGHT = 1920;
 var SCREEN_WIDTH = 1080;
 var TRANSITION_TIME = 2;
-var upOut = function upOut(layerArray, slide, currLayer, layerPos, prevPos, layerOpacity) {
+var upOut = function upOut(layerArray, slide, currLayer, layerPos, prevPos, layerOpacity, padding) {
   if (layerArray[slide].prev === "keep") {
     var combinedHeight = realHeight(currLayer) + realHeightArr(layerArray[slide]);
     if (slide === 1 && combinedHeight < SCREEN_HEIGHT) {
       var screenCenter = SCREEN_HEIGHT / 2;
       var topPosition = screenCenter - combinedHeight / 2;
-      var newCenter = topPosition + realHeight(currLayer) / 2;
+      var newCenter = topPosition + realHeight(currLayer) / 2 - padding;
       layerPos.setValueAtTime(TRANSITION_TIME, [prevPos[0], newCenter]);
     } else {
       var newLayerHeight = realHeightArr(layerArray[slide]);
@@ -213,7 +205,7 @@ var fadeIn = function fadeIn(layerOpacity) {
   layerOpacity.setValueAtTime(0, 0);
   layerOpacity.setValueAtTime(1, 100);
 };
-var rightOut = function rightOut(layerArray, slide, currLayer, layerPos, prevPos, layerOpacity) {
+var rightOut = function rightOut(layerArray, slide, currLayer, layerPos, prevPos, layerOpacity, padding) {
   if (layerArray[slide].prev === "keep") {
     var newLayerWidth = realWidthArr(layerArray[slide]);
     var leftPanel = layerArray[slide - 1].layer;
@@ -237,7 +229,7 @@ function _unsupportedIterableToArray$1(o, minLen) { if (!o) return; if (typeof o
 function _arrayLikeToArray$1(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i]; return arr2; }
 function _iterableToArrayLimit$1(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
 function _arrayWithHoles$1(arr) { if (__isArray(arr)) return arr; }
-var animateLayer = function animateLayer(currLayer, slide, index, layerArray, newComp, darkenIndex, noPan) {
+var animateLayer = function animateLayer(currLayer, slide, index, layerArray, newComp, darkenIndex) {
   if (slide === index) {
     animateLayerIn(currLayer, layerArray, index, slide);
     if (darkenIndex != -1 && darkenIndex <= slide) {
@@ -250,7 +242,7 @@ var animateLayer = function animateLayer(currLayer, slide, index, layerArray, ne
       }
       darkBG.moveAfter(newComp.layer(slide - darkenIndex + 2));
     }
-    if (layerArray[index].pan && !noPan) {
+    if (layerArray[index].pan) {
       panLayer(currLayer, newComp);
     }
   } else {
@@ -294,9 +286,9 @@ var animateLayerOut = function animateLayerOut(currLayer, layerArray, index, sli
   layerPos.setValueAtTime(0, prevPos);
   if (layerArray[slide].darken) return;
   if (layerArray[index].out[slide - 1 - index] === "up") {
-    upOut(layerArray, slide, currLayer, layerPos, prevPos, layerOpacity);
+    upOut(layerArray, slide, currLayer, layerPos, prevPos, layerOpacity, layerArray[index].padding);
   } else if (layerArray[index].out[slide - 1 - index] === "right") {
-    rightOut(layerArray, slide, currLayer, layerPos, prevPos, layerOpacity);
+    rightOut(layerArray, slide, currLayer, layerPos, prevPos, layerOpacity, layerArray[index].padding);
   } else if (layerArray[index].out[slide - 1 - index] === "fade") {
     fadeOut(layerOpacity);
   } else if (layerArray[index].out[slide - 1 - index] === "none") {
@@ -350,13 +342,13 @@ function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o =
 function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i]; return arr2; }
 function _iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
 function _arrayWithHoles(arr) { if (__isArray(arr)) return arr; }
-var animatePhotoshop = function animatePhotoshop(layerArray, noPan) {
+var animatePhotoshop = function animatePhotoshop(layerArray) {
   app.beginUndoGroup("Split Comp");
   var comp = app.project.activeItem;
   if (!(comp instanceof CompItem)) return;
   var newFolder = app.project.items.addFolder("Page_" + comp.name);
   if (layerArray.length == 0) layerArray = getPanels();
-  var layers = getLayers(comp, layerArray, newFolder, noPan);
+  var layers = getLayers(comp, layerArray, newFolder);
   var currentCount = 1;
   var darkenIndex = -1;
   var comps = [];
@@ -380,7 +372,7 @@ var animatePhotoshop = function animatePhotoshop(layerArray, noPan) {
         if (!(newLayerScale instanceof Property)) continue;
         newLayerScale.setValue([layers[j].scaleFactor * 100, layers[j].scaleFactor * 100]);
         if (layerArray[i].darken) darkenIndex = i;
-        if (i != 0 && k == 0) animateLayer(newLayer, i, j, layers, newComp, darkenIndex, noPan);
+        if (i != 0 && k == 0) animateLayer(newLayer, i, j, layers, newComp, darkenIndex);
         layers[j].layer = newLayer;
       }
       currentCount++;
@@ -451,6 +443,7 @@ var getPanels = function getPanels() {
     var inAnim = "down";
     var currLayer = comp.layer(i);
     if (!(currLayer instanceof AVLayer)) continue;
+    var pan = shouldPan(currLayer);
     if (currLayer.height > currLayer.width) {
       inAnim = "left";
       // if (prevLayer) prevLayer.out[0] = "right";
@@ -462,10 +455,11 @@ var getPanels = function getPanels() {
       name: comp.layer(i).name,
       index: i,
       count: 1,
-      scaleFactor: 1,
       "in": inAnim,
       out: out,
       prev: "keep",
+      pan: pan,
+      padding: 100,
       darken: false
     };
     layers.push(layerObj);
@@ -539,8 +533,8 @@ var updateValues = function updateValues() {
           var parentLayer = layers[k].layer.parent;
           var actualPosition = oldPos.valueAtTime(15, true);
           if (parentLayer) {
-            var childPosition = layers[k].layer.transform.position.value;
-            var parentPosition = parentLayer.transform.position.value;
+            var childPosition = layers[k].layer.transform.position.valueAtTime(15, false);
+            var parentPosition = parentLayer.transform.position.valueAtTime(15, false);
             actualPosition = [childPosition[0] + parentPosition[0], childPosition[1] + parentPosition[1]];
           }
           var direction = getAnimDirection(currentLayer);

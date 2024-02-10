@@ -21,4 +21,6 @@ export type LayerObj = {
   prev: string;
   count: number;
   darken: boolean;
+  pan: boolean;
+  padding: number;
 };

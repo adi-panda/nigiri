@@ -22,8 +22,7 @@ export const animateLayer = (
   index: number, // current layer index, e.g 0, 1, 2
   layerArray: LayerObj[],
   newComp: CompItem,
-  darkenIndex: number,
-  noPan: boolean
+  darkenIndex: number
 ) => {
   if (slide === index) {
     animateLayerIn(currLayer, layerArray, index, slide);
@@ -37,7 +36,7 @@ export const animateLayer = (
       }
       darkBG.moveAfter(newComp.layer(slide - darkenIndex + 2));
     }
-    if (layerArray[index].pan && !noPan) {
+    if (layerArray[index].pan) {
       panLayer(currLayer, newComp);
     }
   } else {
@@ -96,9 +95,25 @@ const animateLayerOut = (
   if (layerArray[slide].darken) return;
 
   if (layerArray[index].out[slide - 1 - index] === "up") {
-    upOut(layerArray, slide, currLayer, layerPos, prevPos, layerOpacity);
+    upOut(
+      layerArray,
+      slide,
+      currLayer,
+      layerPos,
+      prevPos,
+      layerOpacity,
+      layerArray[index].padding
+    );
   } else if (layerArray[index].out[slide - 1 - index] === "right") {
-    rightOut(layerArray, slide, currLayer, layerPos, prevPos, layerOpacity);
+    rightOut(
+      layerArray,
+      slide,
+      currLayer,
+      layerPos,
+      prevPos,
+      layerOpacity,
+      layerArray[index].padding
+    );
   } else if (layerArray[index].out[slide - 1 - index] === "fade") {
     fadeOut(layerOpacity);
   } else if (layerArray[index].out[slide - 1 - index] === "none") {

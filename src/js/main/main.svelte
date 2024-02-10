@@ -7,7 +7,7 @@
 
   let layers: LayerObj[] = [];
   let backgroundColor = "rgb(35, 35, 35)";
-  let noPan = false;
+  let panelItemColor = "transparent";
   const outTransitions = ["up", "right", "fade", "none"];
   const inTransitions = ["down", "left", "fade"];
   const prevBehaviors = ["keep", "flush"];
@@ -23,7 +23,7 @@
   };
   const animateLayers = () => {
     console.log(layers);
-    evalTS("animatePhotoshop", layers, noPan);
+    evalTS("animatePhotoshop", layers);
   };
   const panLayer = () => {
     evalTS("panLayer", null, null);
@@ -41,31 +41,33 @@
 </script>
 
 <div style={`background-color: ${backgroundColor}`} class="app">
-  <div class="flex-row">
-    <button class="button" on:click={animateLayers}>Animate!</button>
-    <button class="button" on:click={panLayer}>Pan!</button>
-    <button
-      class="button"
-      on:click={() => {
-        evalTS("updateValues");
-      }}>Update Values!</button
-    >
-    <button on:click={getLayers}>Load!</button>
-    <button class="button" on:click={renderComps}>Render!</button>
-    <button
-      class="button"
-      on:click={() => {
-        evalTS("addAudios");
-      }}>Speak!</button
-    >
-    <input type="checkbox" bind:checked={noPan} />
+  <div class="flex-column">
+    <div class="grid-buttons">
+      <button class="button" on:click={animateLayers}>Animate!</button>
+      <button class="button" on:click={panLayer}>Pan!</button>
+      <button
+        class="button"
+        on:click={() => {
+          evalTS("updateValues");
+        }}>Update!</button
+      >
+    </div>
+    <div class="grid-buttons">
+      <button on:click={getLayers}>Load!</button>
+      <button class="button" on:click={renderComps}>Render!</button>
+      <button
+        class="button"
+        on:click={() => {
+          evalTS("addAudios");
+        }}>Speak!</button
+      >
+    </div>
   </div>
   <div class="panel-item-title">
     <span>Layer</span>
     <span>In</span>
     <span>Prev</span>
     <span>Count</span>
-    <span>Darken</span>
   </div>
   <div class="panel-container">
     {#each layers as layer}
@@ -77,7 +79,7 @@
           <button
             class="list-button"
             style={layer.index === 1
-              ? `background-color: ${backgroundColor}; border-color: ${backgroundColor}; `
+              ? `background-color: ${panelItemColor}; border-color: ${panelItemColor}; `
               : ""}
             on:click={() => {
               if (layer.index === 1) return;
@@ -91,7 +93,7 @@
           <button
             class="list-button"
             style={layer.index === 1
-              ? `background-color: ${backgroundColor}; border-color: ${backgroundColor}; `
+              ? `background-color: ${panelItemColor}; border-color: ${panelItemColor}; `
               : ""}
             on:click={() => {
               if (layer.index === 1) return;
@@ -122,7 +124,6 @@
             min="1"
             bind:value={layer.count}
           />
-          <input type="checkbox" bind:checked={layer.darken} />
         </div>
         <div class="out-items">
           <span><b>Out: </b> </span>
@@ -164,6 +165,19 @@
             </div>
           {/each}
         </div>
+        <div class="toggles">
+          <span>Darken: </span>
+          <input title="darken" type="checkbox" bind:checked={layer.darken} />
+          <span>Pan: </span>
+          <input title="darken" type="checkbox" bind:checked={layer.pan} />
+          <span>Padding: </span>
+          <input
+            title="padding"
+            type="number"
+            step="25"
+            bind:value={layer.padding}
+          />
+        </div>
       </div>
     {/each}
   </div>
@@ -173,9 +187,12 @@
   .panel-item-parent {
     display: flex;
     flex-direction: column;
-    width: 100%;
+    width: calc(100% - 0.5rem);
     gap: 0.25rem;
     margin-bottom: 0.25rem;
+    background-color: #2a2a2a;
+    border: 1px solid #ff6666;
+    padding: 0.25rem;
   }
   .out-items {
     display: flex;
@@ -183,15 +200,29 @@
     align-items: center;
     gap: 0.5rem;
   }
+  .toggles {
+    display: flex;
+    flex-direction: row;
+    align-items: left;
+    vertical-align: middle;
+    gap: 0.5rem;
+    input {
+      height: 1rem;
+      width: 2.75rem;
+      color: #ff6666;
+      margin-top: -0.1rem;
+      align-items: center;
+    }
+  }
   .panel-item {
     display: grid;
-    grid-template-columns: 7rem 3.5rem 3.5rem 2rem 3rem;
+    grid-template-columns: 7rem 3.5rem 3.5rem 2rem;
     align-items: center;
     width: 100%;
   }
   .panel-item-title {
     display: grid;
-    grid-template-columns: 7rem 3.5rem 3.5rem 3.5rem 3rem;
+    grid-template-columns: 7rem 3.5rem 3.5rem 3.5rem;
     align-items: center;
     margin-bottom: 0.75rem;
     width: 100%;
@@ -239,7 +270,11 @@
   }
 
   input[type="checkbox"] {
-    height: 1.3rem;
+    height: 0.75rem;
+    width: 0.75rem;
     color: #ff6666;
+    margin-top: 0.1rem;
+    align-items: center;
+    accent-color: #ff6666;
   }
 </style>

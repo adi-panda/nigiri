@@ -15,14 +15,15 @@ export const upOut = (
   currLayer: AVLayer,
   layerPos: Property,
   prevPos: number[],
-  layerOpacity: Property
+  layerOpacity: Property,
+  padding: number
 ) => {
   if (layerArray[slide].prev === "keep") {
     const combinedHeight = realHeight(currLayer) + realHeightArr(layerArray[slide]);
     if (slide === 1 && combinedHeight < SCREEN_HEIGHT) {
       const screenCenter = SCREEN_HEIGHT / 2;
       const topPosition = screenCenter - combinedHeight / 2;
-      const newCenter = topPosition + realHeight(currLayer) / 2;
+      const newCenter = topPosition + realHeight(currLayer) / 2 - padding;
       layerPos.setValueAtTime(TRANSITION_TIME, [prevPos[0], newCenter]);
     } else {
       const newLayerHeight = realHeightArr(layerArray[slide]);
@@ -117,7 +118,8 @@ export const rightOut = (
   currLayer: AVLayer,
   layerPos: Property,
   prevPos: number[],
-  layerOpacity: Property
+  layerOpacity: Property,
+  padding: number
 ) => {
   if (layerArray[slide].prev === "keep") {
     const newLayerWidth = realWidthArr(layerArray[slide]);

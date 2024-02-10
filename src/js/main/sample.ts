@@ -7,6 +7,8 @@ export const sampleLayers = [
     prev: "keep",
     count: 1,
     darken: false,
+    pan: false,
+    padding: 25,
   },
   {
     index: 2,
@@ -16,5 +18,7 @@ export const sampleLayers = [
     prev: "keep",
     count: 1,
     darken: false,
+    pan: false,
+    padding: 25,
   },
 ];
