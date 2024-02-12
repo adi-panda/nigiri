@@ -42,7 +42,7 @@ const config: CEP_Config = {
     password: "mypassword",
     tsa: "http://timestamp.digicert.com/",
     sourceMap: false,
-    jsxBin: "off",
+    jsxBin: "replace",
   },
   installModules: [],
   copyAssets: [],
